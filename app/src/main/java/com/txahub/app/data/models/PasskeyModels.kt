@@ -5,8 +5,8 @@ import com.google.gson.annotations.SerializedName
 /**
  * Models cho Passkey API
  */
-
-data class CreateChallengeRequest(
+object PasskeyModels {
+    data class CreateChallengeRequest(
     @SerializedName("type")
     val type: String // "registration" hoặc "authentication"
 )
@@ -118,4 +118,5 @@ data class VerifyAuthenticationResponse(
     @SerializedName("data")
     val data: com.txahub.app.data.models.AuthResponse? = null // Chỉ có khi đăng nhập thành công
 )
+}
 

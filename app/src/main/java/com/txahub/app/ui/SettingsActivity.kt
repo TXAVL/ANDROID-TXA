@@ -14,7 +14,6 @@ import com.txahub.app.utils.LocaleHelper
 import com.txahub.app.utils.UpdateChecker
 import com.txahub.app.utils.LogSettingsManager
 import com.txahub.app.utils.NotificationTTSManager
-import com.txahub.app.utils.PasskeyManager
 import com.txahub.app.data.api.ApiClient
 import kotlinx.coroutines.launch
 
@@ -25,7 +24,6 @@ class SettingsActivity : AppCompatActivity() {
     private lateinit var logSettingsManager: LogSettingsManager
     private lateinit var updateChecker: UpdateChecker
     private lateinit var ttsManager: NotificationTTSManager
-    private lateinit var passkeyManager: PasskeyManager
     private var currentLanguage: String = LocaleHelper.LANGUAGE_AUTO
     private var selectedLanguage: String = LocaleHelper.LANGUAGE_AUTO
     
@@ -38,7 +36,6 @@ class SettingsActivity : AppCompatActivity() {
         logSettingsManager = LogSettingsManager(this)
         updateChecker = UpdateChecker(this)
         ttsManager = NotificationTTSManager(this)
-        passkeyManager = PasskeyManager(this)
         
         setSupportActionBar(binding.toolbar)
         supportActionBar?.setDisplayHomeAsUpEnabled(true)
@@ -150,16 +147,15 @@ class SettingsActivity : AppCompatActivity() {
                 Toast.LENGTH_SHORT).show()
         }
         
-        // Setup Passkey register button
+        // Setup Passkey register button - Tính năng sẽ được phát triển sau
         binding.btnRegisterPasskey.setOnClickListener {
-            handleRegisterPasskey()
+            Toast.makeText(
+                this,
+                "Tính năng Passkey sẽ được phát triển trong phiên bản sau",
+                Toast.LENGTH_LONG
+            ).show()
         }
-        
-        // Ẩn nút passkey nếu thiết bị không hỗ trợ
-        if (!passkeyManager.isPasskeySupported()) {
-            binding.btnRegisterPasskey.visibility = android.view.View.GONE
-            binding.tvPasskeyDescription.text = getString(R.string.txa_global_passkey_not_supported)
-        }
+        binding.tvPasskeyDescription.text = "Tính năng Passkey sẽ được phát triển trong phiên bản sau"
     }
     
     private fun loadCurrentLanguage() {
@@ -202,55 +198,6 @@ class SettingsActivity : AppCompatActivity() {
         binding.switchTTS.isChecked = ttsManager.isTTSEnabled()
     }
     
-    private fun handleRegisterPasskey() {
-        if (!passkeyManager.isPasskeySupported()) {
-            Toast.makeText(
-                this,
-                getString(R.string.txa_global_passkey_not_supported),
-                Toast.LENGTH_LONG
-            ).show()
-            return
-        }
-        
-        // Lấy thông tin user hiện tại
-        lifecycleScope.launch {
-            val userInfo = preferencesManager.getUserInfoSync()
-            if (userInfo == null) {
-                Toast.makeText(
-                    this@SettingsActivity,
-                    "Vui lòng đăng nhập trước",
-                    Toast.LENGTH_SHORT
-                ).show()
-                return@launch
-            }
-            
-            binding.btnRegisterPasskey.isEnabled = false
-            binding.btnRegisterPasskey.text = getString(R.string.txa_global_loading)
-            
-            val result = passkeyManager.registerPasskey(
-                userName = userInfo.email,
-                userDisplayName = userInfo.name,
-                userIcon = null
-            )
-            
-            binding.btnRegisterPasskey.isEnabled = true
-            binding.btnRegisterPasskey.text = getString(R.string.txa_global_passkey_register)
-            
-            result.onSuccess {
-                Toast.makeText(
-                    this@SettingsActivity,
-                    getString(R.string.txa_global_passkey_register_success),
-                    Toast.LENGTH_LONG
-                ).show()
-            }.onFailure { error ->
-                Toast.makeText(
-                    this@SettingsActivity,
-                    getString(R.string.txa_global_passkey_register_failed, error.message ?: "Unknown error"),
-                    Toast.LENGTH_LONG
-                ).show()
-            }
-        }
-    }
     
     private fun checkUpdate() {
         binding.btnCheckUpdate.isEnabled = false

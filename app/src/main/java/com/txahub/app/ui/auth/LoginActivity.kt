@@ -13,7 +13,6 @@ import com.txahub.app.data.local.PreferencesManager
 import com.txahub.app.data.repository.AuthRepository
 import com.txahub.app.data.api.ApiClient
 import com.txahub.app.ui.MainActivity
-import com.txahub.app.utils.PasskeyManager
 import kotlinx.coroutines.launch
 
 class LoginActivity : AppCompatActivity() {
@@ -21,7 +20,6 @@ class LoginActivity : AppCompatActivity() {
     private lateinit var binding: ActivityLoginBinding
     private lateinit var authRepository: AuthRepository
     private lateinit var preferencesManager: PreferencesManager
-    private lateinit var passkeyManager: PasskeyManager
     private var isRegisterMode = false
     
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -31,7 +29,6 @@ class LoginActivity : AppCompatActivity() {
         
         preferencesManager = PreferencesManager(this)
         authRepository = AuthRepository(preferencesManager)
-        passkeyManager = PasskeyManager(this)
         
         setupUI()
     }
@@ -53,14 +50,13 @@ class LoginActivity : AppCompatActivity() {
             showForgotPasswordDialog()
         }
         
-        // Setup Passkey login button
+        // Setup Passkey login button - Tính năng sẽ được phát triển sau
         binding.btnPasskeyLogin.setOnClickListener {
-            handlePasskeyLogin()
-        }
-        
-        // Ẩn nút passkey nếu thiết bị không hỗ trợ
-        if (!passkeyManager.isPasskeySupported()) {
-            binding.btnPasskeyLogin.visibility = android.view.View.GONE
+            Toast.makeText(
+                this,
+                "Tính năng Passkey sẽ được phát triển trong phiên bản sau",
+                Toast.LENGTH_LONG
+            ).show()
         }
     }
     
@@ -102,24 +98,27 @@ class LoginActivity : AppCompatActivity() {
             binding.btnSubmit.isEnabled = true
             binding.progressBar.visibility = android.view.View.GONE
             
-            result.onSuccess { authResponse ->
-                if (rememberMe) {
-                    preferencesManager.setRememberMe(true)
+            result.fold(
+                onSuccess = { authResponse ->
+                    if (rememberMe) {
+                        preferencesManager.setRememberMe(true)
+                    }
+                    
+                    // Kiểm tra email đã xác minh chưa
+                    if (authResponse.user.emailVerifiedAt == null) {
+                        showEmailVerificationDialog(email)
+                    } else {
+                        navigateToMain()
+                    }
+                },
+                onFailure = { error ->
+                    Toast.makeText(
+                        this@LoginActivity,
+                        error.message ?: getString(R.string.txa_global_error_invalid_credentials),
+                        Toast.LENGTH_LONG
+                    ).show()
                 }
-                
-                // Kiểm tra email đã xác minh chưa
-                if (authResponse.user.emailVerifiedAt == null) {
-                    showEmailVerificationDialog(email)
-                } else {
-                    navigateToMain()
-                }
-            }.onFailure { error ->
-                Toast.makeText(
-                    this@LoginActivity,
-                    error.message ?: getString(R.string.txa_global_error_invalid_credentials),
-                    Toast.LENGTH_LONG
-                ).show()
-            }
+            )
         }
     }
     
@@ -142,16 +141,19 @@ class LoginActivity : AppCompatActivity() {
             binding.btnSubmit.isEnabled = true
             binding.progressBar.visibility = android.view.View.GONE
             
-            result.onSuccess { authResponse ->
-                // Sau khi đăng ký thành công, hiển thị thông báo xác minh email
-                showEmailVerificationRequiredDialog(email)
-            }.onFailure { error ->
-                Toast.makeText(
-                    this@LoginActivity,
-                    error.message ?: getString(R.string.txa_global_error_register_failed),
-                    Toast.LENGTH_LONG
-                ).show()
-            }
+            result.fold(
+                onSuccess = { authResponse ->
+                    // Sau khi đăng ký thành công, hiển thị thông báo xác minh email
+                    showEmailVerificationRequiredDialog(email)
+                },
+                onFailure = { error ->
+                    Toast.makeText(
+                        this@LoginActivity,
+                        error.message ?: getString(R.string.txa_global_error_register_failed),
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            )
         }
     }
     
@@ -240,19 +242,22 @@ class LoginActivity : AppCompatActivity() {
     private fun resendVerification(email: String) {
         lifecycleScope.launch {
             val result = authRepository.resendVerification(email)
-            result.onSuccess {
-                Toast.makeText(
-                    this@LoginActivity,
-                    getString(R.string.txa_global_verification_sent),
-                    Toast.LENGTH_LONG
-                ).show()
-            }.onFailure { error ->
-                Toast.makeText(
-                    this@LoginActivity,
-                    error.message ?: getString(R.string.txa_global_error_resend_failed),
-                    Toast.LENGTH_LONG
-                ).show()
-            }
+            result.fold(
+                onSuccess = {
+                    Toast.makeText(
+                        this@LoginActivity,
+                        getString(R.string.txa_global_verification_sent),
+                        Toast.LENGTH_LONG
+                    ).show()
+                },
+                onFailure = { error ->
+                    Toast.makeText(
+                        this@LoginActivity,
+                        error.message ?: getString(R.string.txa_global_error_resend_failed),
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            )
         }
     }
     
@@ -278,70 +283,25 @@ class LoginActivity : AppCompatActivity() {
     private fun sendForgotPasswordEmail(email: String) {
         lifecycleScope.launch {
             val result = authRepository.forgotPassword(email)
-            result.onSuccess {
-                Toast.makeText(
-                    this@LoginActivity,
-                    getString(R.string.txa_global_reset_password_sent, email),
-                    Toast.LENGTH_LONG
-                ).show()
-            }.onFailure { error ->
-                Toast.makeText(
-                    this@LoginActivity,
-                    error.message ?: getString(R.string.txa_global_error_forgot_password_failed),
-                    Toast.LENGTH_LONG
-                ).show()
-            }
+            result.fold(
+                onSuccess = {
+                    Toast.makeText(
+                        this@LoginActivity,
+                        getString(R.string.txa_global_reset_password_sent, email),
+                        Toast.LENGTH_LONG
+                    ).show()
+                },
+                onFailure = { error ->
+                    Toast.makeText(
+                        this@LoginActivity,
+                        error.message ?: getString(R.string.txa_global_error_forgot_password_failed),
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            )
         }
     }
     
-    private fun handlePasskeyLogin() {
-        if (!passkeyManager.isPasskeySupported()) {
-            Toast.makeText(
-                this,
-                getString(R.string.txa_global_passkey_not_supported),
-                Toast.LENGTH_LONG
-            ).show()
-            return
-        }
-        
-        binding.btnPasskeyLogin.isEnabled = false
-        binding.progressBar.visibility = android.view.View.VISIBLE
-        
-        lifecycleScope.launch {
-            val result = passkeyManager.authenticatePasskey()
-            
-            binding.btnPasskeyLogin.isEnabled = true
-            binding.progressBar.visibility = android.view.View.GONE
-            
-            result.onSuccess { authResponse ->
-                // Lưu token và user info nếu có
-                authResponse.data?.let { authData ->
-                    preferencesManager.saveAuthToken(authData.token)
-                    preferencesManager.saveUserInfo(
-                        authData.user.email,
-                        authData.user.name,
-                        authData.user.id.toString(),
-                        authData.user.isAdmin
-                    )
-                    ApiClient.setAuthToken(authData.token)
-                }
-                
-                Toast.makeText(
-                    this@LoginActivity,
-                    getString(R.string.txa_global_passkey_login_success),
-                    Toast.LENGTH_SHORT
-                ).show()
-                
-                navigateToMain()
-            }.onFailure { error ->
-                Toast.makeText(
-                    this@LoginActivity,
-                    getString(R.string.txa_global_passkey_login_failed, error.message ?: "Unknown error"),
-                    Toast.LENGTH_LONG
-                ).show()
-            }
-        }
-    }
     
     private fun navigateToMain() {
         startActivity(Intent(this, MainActivity::class.java))

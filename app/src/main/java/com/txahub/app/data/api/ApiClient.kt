@@ -115,7 +115,8 @@ object ApiClient {
     
     val authApi: AuthApiService = retrofit.create(AuthApiService::class.java)
     val statisticsApi: StatisticsApiService = retrofit.create(StatisticsApiService::class.java)
-    val passkeyApi: PasskeyApiService = retrofit.create(PasskeyApiService::class.java)
+    // Passkey API sẽ được phát triển sau
+    // val passkeyApi: PasskeyApiService = retrofit.create(PasskeyApiService::class.java)
     
     fun setAuthToken(token: String) {
         authToken = token

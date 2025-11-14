@@ -16,7 +16,7 @@ class TXAApplication : Application() {
     
     private val defaultExceptionHandler = Thread.getDefaultUncaughtExceptionHandler()
     
-    override fun attachBaseContext(base: Context): Context {
+    override fun attachBaseContext(base: Context) {
         val preferencesManager = PreferencesManager(base)
         val language = try {
             runBlocking {
@@ -25,7 +25,7 @@ class TXAApplication : Application() {
         } catch (e: Exception) {
             LocaleHelper.LANGUAGE_AUTO
         }
-        return LocaleHelper.setLocale(base, language)
+        super.attachBaseContext(LocaleHelper.setLocale(base, language))
     }
     
     override fun onCreate() {
@@ -42,15 +42,27 @@ class TXAApplication : Application() {
         
         // Khởi tạo và thêm nhạc chuông vào MediaStore
         val soundManager = NotificationSoundManager(this)
-        // Nếu có file nhạc chuông trong raw, copy vào external storage và thêm vào MediaStore
-        // Ví dụ: R.raw.chuong (nếu có)
+        // Tự động tìm tất cả file nhạc chuông trong res/raw
+        // Nếu có >= 2 file, random chọn 1 file để khởi tạo
+        // Nếu có 1 file, dùng file đó
         try {
-            val resourceId = resources.getIdentifier("chuong", "raw", packageName)
-            if (resourceId != 0) {
-                soundManager.initializeDefaultAppSound(resourceId, "chuong.mp3")
+            val rawFiles = findRawSoundFiles()
+            if (rawFiles.isNotEmpty()) {
+                val selectedFile = if (rawFiles.size >= 2) {
+                    // Random chọn 1 file nếu có >= 2 file
+                    rawFiles.random()
+                } else {
+                    // Dùng file duy nhất nếu chỉ có 1 file
+                    rawFiles[0]
+                }
+                
+                val resourceId = resources.getIdentifier(selectedFile.first, "raw", packageName)
+                if (resourceId != 0) {
+                    soundManager.initializeDefaultAppSound(resourceId, selectedFile.second)
+                }
             }
         } catch (e: Exception) {
-            // Không có file raw, bỏ qua
+            android.util.Log.e("TXAApplication", "Error initializing default app sound", e)
         }
         
         // Thêm tất cả nhạc chuông vào MediaStore
@@ -60,6 +72,33 @@ class TXAApplication : Application() {
         if (UpdateCheckService.hasBatteryOptimizationPermission(this)) {
             UpdateCheckService.startIfAllowed(this)
         }
+    }
+    
+    /**
+     * Tìm tất cả file nhạc chuông trong res/raw
+     * @return List<Pair<resourceName, fileName>> - Tên resource (không có extension) và tên file đầy đủ
+     */
+    private fun findRawSoundFiles(): List<Pair<String, String>> {
+        val rawFiles = mutableListOf<Pair<String, String>>()
+        try {
+            val fieldIds = R.raw::class.java.fields
+            for (field in fieldIds) {
+                val resourceName = field.name
+                // Trong Android, tên resource không có extension
+                // Ví dụ: file "chuong.mp3" sẽ có resource name là "chuong"
+                val resourceId = resources.getIdentifier(resourceName, "raw", packageName)
+                if (resourceId != 0) {
+                    // Tìm thấy resource, giả sử extension là .mp3 (phổ biến nhất)
+                    // Nếu file thực tế có extension khác, có thể cần điều chỉnh sau
+                    val fileName = "${resourceName}.mp3"
+                    rawFiles.add(Pair(resourceName, fileName))
+                }
+            }
+            android.util.Log.d("TXAApplication", "Found ${rawFiles.size} raw sound files: ${rawFiles.map { it.second }}")
+        } catch (e: Exception) {
+            android.util.Log.e("TXAApplication", "Error finding raw sound files", e)
+        }
+        return rawFiles
     }
     
     private fun setupCrashHandler() {

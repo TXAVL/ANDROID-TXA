@@ -116,7 +116,10 @@ git branch -M main >nul 2>&1
 
 REM --- Git commit ---
 echo 📦 Committing %MODE% APK to Git...
-git add -f "%RELEASE_DIR%\!APK_DEST_NAME!"
+REM Add all files (gitignore will exclude unnecessary .md files)
+REM Only README.md and BUILD_ERRORS_REPORT.md will be committed
+git add -A
+REM Commit
 git commit -m "Auto-build: Add !APK_DEST_NAME!" 2>nul || echo No changes to commit
 
 REM --- Git push ---
