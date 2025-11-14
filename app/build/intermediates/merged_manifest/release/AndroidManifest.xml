@@ -1,0 +1,184 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android"
+    package="com.txahub.app"
+    android:versionCode="1"
+    android:versionName="1.0.0_txa" >
+
+    <uses-sdk
+        android:minSdkVersion="24"
+        android:targetSdkVersion="34" />
+
+    <uses-permission android:name="android.permission.INTERNET" />
+    <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+    <uses-permission
+        android:name="android.permission.WRITE_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+    <uses-permission
+        android:name="android.permission.READ_EXTERNAL_STORAGE"
+        android:maxSdkVersion="32" />
+    <uses-permission android:name="android.permission.REQUEST_IGNORE_BATTERY_OPTIMIZATIONS" />
+    <uses-permission android:name="android.permission.MANAGE_EXTERNAL_STORAGE" />
+
+    <permission
+        android:name="com.txahub.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION"
+        android:protectionLevel="signature" />
+
+    <uses-permission android:name="com.txahub.app.DYNAMIC_RECEIVER_NOT_EXPORTED_PERMISSION" />
+
+    <application
+        android:name="com.txahub.app.TXAApplication"
+        android:allowBackup="true"
+        android:appComponentFactory="androidx.core.app.CoreComponentFactory"
+        android:extractNativeLibs="false"
+        android:icon="@drawable/logo"
+        android:label="@string/txa_global.app_name"
+        android:roundIcon="@drawable/logo"
+        android:supportsRtl="true"
+        android:theme="@style/Theme.TXAHub"
+        android:usesCleartextTraffic="false" >
+        <activity
+            android:name="com.txahub.app.ui.SplashActivity"
+            android:exported="true"
+            android:launchMode="singleTop"
+            android:theme="@style/Theme.TXAHub.Splash" >
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+
+            <!-- Deeplink Intent Filter -->
+            <intent-filter>
+                <action android:name="android.intent.action.VIEW" />
+
+                <category android:name="android.intent.category.DEFAULT" />
+                <category android:name="android.intent.category.BROWSABLE" />
+
+                <data android:scheme="txahub" />
+            </intent-filter>
+        </activity>
+        <activity
+            android:name="com.txahub.app.ui.auth.LoginActivity"
+            android:exported="false"
+            android:theme="@style/Theme.TXAHub" />
+        <activity
+            android:name="com.txahub.app.ui.MainActivity"
+            android:exported="false"
+            android:theme="@style/Theme.TXAHub" />
+        <activity
+            android:name="com.txahub.app.ui.admin.AdminManagementActivity"
+            android:exported="false"
+            android:parentActivityName="com.txahub.app.ui.MainActivity"
+            android:theme="@style/Theme.TXAHub" />
+        <activity
+            android:name="com.txahub.app.utils.ChangelogActivity"
+            android:exported="false"
+            android:theme="@style/Theme.TXAHub" />
+        <activity
+            android:name="com.txahub.app.ui.SettingsActivity"
+            android:exported="false"
+            android:parentActivityName="com.txahub.app.ui.MainActivity"
+            android:theme="@style/Theme.TXAHub" />
+        <activity
+            android:name="com.txahub.app.ui.LogViewerActivity"
+            android:exported="false"
+            android:parentActivityName="com.txahub.app.ui.MainActivity"
+            android:theme="@style/Theme.TXAHub" />
+
+        <!-- FileProvider for sharing log files -->
+        <provider
+            android:name="androidx.core.content.FileProvider"
+            android:authorities="com.txahub.app.fileprovider"
+            android:exported="false"
+            android:grantUriPermissions="true" >
+            <meta-data
+                android:name="android.support.FILE_PROVIDER_PATHS"
+                android:resource="@xml/file_provider_paths" />
+        </provider>
+
+        <service
+            android:name="androidx.credentials.playservices.CredentialProviderMetadataHolder"
+            android:enabled="true"
+            android:exported="false" >
+            <meta-data
+                android:name="androidx.credentials.CREDENTIAL_PROVIDER_KEY"
+                android:value="androidx.credentials.playservices.CredentialProviderPlayServicesImpl" />
+        </service>
+
+        <activity
+            android:name="androidx.credentials.playservices.HiddenActivity"
+            android:configChanges="orientation|screenSize|screenLayout|keyboardHidden"
+            android:enabled="true"
+            android:exported="false"
+            android:fitsSystemWindows="true"
+            android:theme="@style/Theme.Hidden" >
+        </activity>
+        <activity
+            android:name="com.google.android.gms.auth.api.signin.internal.SignInHubActivity"
+            android:excludeFromRecents="true"
+            android:exported="false"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+        <!--
+            Service handling Google Sign-In user revocation. For apps that do not integrate with
+            Google Sign-In, this service will never be started.
+        -->
+        <service
+            android:name="com.google.android.gms.auth.api.signin.RevocationBoundService"
+            android:exported="true"
+            android:permission="com.google.android.gms.auth.api.signin.permission.REVOCATION_NOTIFICATION"
+            android:visibleToInstantApps="true" />
+
+        <activity
+            android:name="com.google.android.gms.common.api.GoogleApiActivity"
+            android:exported="false"
+            android:theme="@android:style/Theme.Translucent.NoTitleBar" />
+
+        <meta-data
+            android:name="com.google.android.gms.version"
+            android:value="@integer/google_play_services_version" />
+
+        <provider
+            android:name="androidx.startup.InitializationProvider"
+            android:authorities="com.txahub.app.androidx-startup"
+            android:exported="false" >
+            <meta-data
+                android:name="androidx.emoji2.text.EmojiCompatInitializer"
+                android:value="androidx.startup" />
+            <meta-data
+                android:name="androidx.lifecycle.ProcessLifecycleInitializer"
+                android:value="androidx.startup" />
+            <meta-data
+                android:name="androidx.profileinstaller.ProfileInstallerInitializer"
+                android:value="androidx.startup" />
+        </provider>
+
+        <uses-library
+            android:name="androidx.window.extensions"
+            android:required="false" />
+        <uses-library
+            android:name="androidx.window.sidecar"
+            android:required="false" />
+
+        <receiver
+            android:name="androidx.profileinstaller.ProfileInstallReceiver"
+            android:directBootAware="false"
+            android:enabled="true"
+            android:exported="true"
+            android:permission="android.permission.DUMP" >
+            <intent-filter>
+                <action android:name="androidx.profileinstaller.action.INSTALL_PROFILE" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="androidx.profileinstaller.action.SKIP_FILE" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="androidx.profileinstaller.action.SAVE_PROFILE" />
+            </intent-filter>
+            <intent-filter>
+                <action android:name="androidx.profileinstaller.action.BENCHMARK_OPERATION" />
+            </intent-filter>
+        </receiver>
+    </application>
+
+</manifest>

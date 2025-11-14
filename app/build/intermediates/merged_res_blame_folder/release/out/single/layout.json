@@ -1,0 +1,46 @@
+[
+    {
+        "merged": "C:\\Users\\TXA2000\\.gradle\\daemon\\8.7\\com.txahub.app-mergeReleaseResources-57:\\layout\\activity_main.xml",
+        "source": "C:\\Users\\TXA2000\\.gradle\\daemon\\8.7\\com.txahub.app-main-59:\\layout\\activity_main.xml"
+    },
+    {
+        "merged": "C:\\Users\\TXA2000\\.gradle\\daemon\\8.7\\com.txahub.app-mergeReleaseResources-57:\\layout\\dialog_permission_request.xml",
+        "source": "C:\\Users\\TXA2000\\.gradle\\daemon\\8.7\\com.txahub.app-main-59:\\layout\\dialog_permission_request.xml"
+    },
+    {
+        "merged": "C:\\Users\\TXA2000\\.gradle\\daemon\\8.7\\com.txahub.app-mergeReleaseResources-57:\\layout\\item_log_file.xml",
+        "source": "C:\\Users\\TXA2000\\.gradle\\daemon\\8.7\\com.txahub.app-main-59:\\layout\\item_log_file.xml"
+    },
+    {
+        "merged": "C:\\Users\\TXA2000\\.gradle\\daemon\\8.7\\com.txahub.app-mergeReleaseResources-57:\\layout\\item_permission.xml",
+        "source": "C:\\Users\\TXA2000\\.gradle\\daemon\\8.7\\com.txahub.app-main-59:\\layout\\item_permission.xml"
+    },
+    {
+        "merged": "C:\\Users\\TXA2000\\.gradle\\daemon\\8.7\\com.txahub.app-mergeReleaseResources-57:\\layout\\activity_log_viewer.xml",
+        "source": "C:\\Users\\TXA2000\\.gradle\\daemon\\8.7\\com.txahub.app-main-59:\\layout\\activity_log_viewer.xml"
+    },
+    {
+        "merged": "C:\\Users\\TXA2000\\.gradle\\daemon\\8.7\\com.txahub.app-mergeReleaseResources-57:\\layout\\nav_header_main.xml",
+        "source": "C:\\Users\\TXA2000\\.gradle\\daemon\\8.7\\com.txahub.app-main-59:\\layout\\nav_header_main.xml"
+    },
+    {
+        "merged": "C:\\Users\\TXA2000\\.gradle\\daemon\\8.7\\com.txahub.app-mergeReleaseResources-57:\\layout\\activity_splash.xml",
+        "source": "C:\\Users\\TXA2000\\.gradle\\daemon\\8.7\\com.txahub.app-main-59:\\layout\\activity_splash.xml"
+    },
+    {
+        "merged": "C:\\Users\\TXA2000\\.gradle\\daemon\\8.7\\com.txahub.app-mergeReleaseResources-57:\\layout\\activity_admin_management.xml",
+        "source": "C:\\Users\\TXA2000\\.gradle\\daemon\\8.7\\com.txahub.app-main-59:\\layout\\activity_admin_management.xml"
+    },
+    {
+        "merged": "C:\\Users\\TXA2000\\.gradle\\daemon\\8.7\\com.txahub.app-mergeReleaseResources-57:\\layout\\activity_settings.xml",
+        "source": "C:\\Users\\TXA2000\\.gradle\\daemon\\8.7\\com.txahub.app-main-59:\\layout\\activity_settings.xml"
+    },
+    {
+        "merged": "com.txahub.app-mergeReleaseResources-57:/layout/activity_login.xml",
+        "source": "com.txahub.app-main-59:/layout/activity_login.xml"
+    },
+    {
+        "merged": "C:\\Users\\TXA2000\\.gradle\\daemon\\8.7\\com.txahub.app-mergeReleaseResources-57:\\layout\\activity_login.xml",
+        "source": "C:\\Users\\TXA2000\\.gradle\\daemon\\8.7\\com.txahub.app-main-59:\\layout\\activity_login.xml"
+    }
+]
