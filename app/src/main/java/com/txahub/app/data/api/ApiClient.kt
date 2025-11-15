@@ -44,10 +44,15 @@ object ApiClient {
         val endTime = System.currentTimeMillis()
         val duration = endTime - startTime
         
-        // Đọc response body
+        // Đọc response body - đảm bảo luôn đọc được
         val responseBodyString = try {
             val responseBody = response.peekBody(1024 * 1024) // Peek 1MB
-            responseBody.string()
+            val bodyString = responseBody.string()
+            if (bodyString.isBlank()) {
+                "[Response body is empty]"
+            } else {
+                bodyString
+            }
         } catch (e: Exception) {
             "[Unable to read response body: ${e.message}]"
         }

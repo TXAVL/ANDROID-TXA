@@ -4,6 +4,7 @@ import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import com.txahub.app.R
 import com.txahub.app.data.local.PreferencesManager
@@ -33,6 +34,11 @@ class SplashActivity : AppCompatActivity() {
             
             // Chạy animation splash screen
             startSplashAnimation()
+            
+            // Hiển thị toast "©️POWER BY TXA" sau một chút delay
+            Handler(Looper.getMainLooper()).postDelayed({
+                Toast.makeText(this, "©️POWER BY TXA", Toast.LENGTH_SHORT).show()
+            }, 1500) // Hiển thị sau 1.5 giây
             
             preferencesManager = PreferencesManager(this)
             permissionManager = PermissionManager(this)

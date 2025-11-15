@@ -24,6 +24,7 @@ class PreferencesManager(private val context: Context) {
         private val IS_ADMIN_KEY = booleanPreferencesKey("is_admin")
         private val REMEMBER_ME_KEY = booleanPreferencesKey("remember_me")
         private val LANGUAGE_KEY = stringPreferencesKey("language")
+        private val CHANGELOG_VIEWED_VERSION_KEY = stringPreferencesKey("changelog_viewed_version")
     }
     
     val authToken: Flow<String?> = context.dataStore.data.map { prefs ->
@@ -109,6 +110,32 @@ class PreferencesManager(private val context: Context) {
         val userId = prefs[USER_ID_KEY] ?: return null
         val isAdmin = prefs[IS_ADMIN_KEY] ?: false
         return UserInfo(email, name, userId, isAdmin)
+    }
+    
+    /**
+     * Kiểm tra xem đã xem changelog cho version này chưa
+     */
+    suspend fun hasViewedChangelogForVersion(versionName: String): Boolean {
+        val prefs = context.dataStore.data.first()
+        val viewedVersion = prefs[CHANGELOG_VIEWED_VERSION_KEY]
+        return viewedVersion == versionName
+    }
+    
+    /**
+     * Lưu đã xem changelog cho version này
+     */
+    suspend fun markChangelogViewedForVersion(versionName: String) {
+        context.dataStore.edit { prefs ->
+            prefs[CHANGELOG_VIEWED_VERSION_KEY] = versionName
+        }
+    }
+    
+    /**
+     * Lấy version đã xem changelog (sync)
+     */
+    suspend fun getViewedChangelogVersionSync(): String? {
+        val prefs = context.dataStore.data.first()
+        return prefs[CHANGELOG_VIEWED_VERSION_KEY]
     }
 }
 

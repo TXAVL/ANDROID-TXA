@@ -36,7 +36,18 @@ class ChangelogActivity : AppCompatActivity() {
         currentVersion = getCurrentVersion()
         
         setupViews()
-        loadAllChangelogs()
+        
+        // Kiểm tra xem có EXTRA từ SplashActivity không
+        val versionName = intent.getStringExtra(EXTRA_VERSION_NAME)
+        val changelog = intent.getStringExtra(EXTRA_CHANGELOG)
+        
+        if (versionName != null && changelog != null) {
+            // Hiển thị chỉ changelog của bản mới nhất
+            loadSingleChangelog(versionName, changelog)
+        } else {
+            // Hiển thị tất cả changelogs (khi mở từ menu)
+            loadAllChangelogs()
+        }
     }
     
     private fun setupViews() {
@@ -49,6 +60,37 @@ class ChangelogActivity : AppCompatActivity() {
         }
     }
     
+    /**
+     * Hiển thị chỉ changelog của bản mới nhất (khi được gọi từ SplashActivity)
+     */
+    private fun loadSingleChangelog(versionName: String, changelog: String) {
+        progressBar.visibility = View.VISIBLE
+        layoutChangelogList.removeAllViews()
+        
+        // Tạo VersionChangelog từ thông tin nhận được
+        val versionChangelog = VersionChangelog(
+            versionName = versionName,
+            versionCode = 0, // Không cần version code cho single changelog
+            releaseDate = "", // Không có release date từ SplashActivity
+            changelog = changelog
+        )
+        
+        // Thêm vào expandedItems trước để đảm bảo item được mở rộng ngay
+        val itemKey = versionChangelog.versionName
+        expandedItems.add(itemKey)
+        
+        runOnUiThread {
+            progressBar.visibility = View.GONE
+            
+            // Tạo item cho version này (sẽ tự động expand vì đã thêm vào expandedItems)
+            val itemView = createChangelogItem(versionChangelog)
+            layoutChangelogList.addView(itemView)
+        }
+    }
+    
+    /**
+     * Hiển thị tất cả changelogs (khi mở từ menu)
+     */
     private fun loadAllChangelogs() {
         progressBar.visibility = View.VISIBLE
         layoutChangelogList.removeAllViews()
@@ -100,8 +142,13 @@ class ChangelogActivity : AppCompatActivity() {
             tvCurrentBadge.visibility = View.GONE
         }
         
-        // Set release date
-        tvReleaseDate.text = "Ngày phát hành: ${versionChangelog.releaseDate}"
+        // Set release date (ẩn nếu không có)
+        if (versionChangelog.releaseDate.isNotBlank()) {
+            tvReleaseDate.text = "Ngày phát hành: ${versionChangelog.releaseDate}"
+            tvReleaseDate.visibility = View.VISIBLE
+        } else {
+            tvReleaseDate.visibility = View.GONE
+        }
         
         // Load changelog vào WebView
         val displayChangelog = if (versionChangelog.changelog.isBlank() || versionChangelog.changelog.trim().isEmpty()) {
