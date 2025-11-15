@@ -19,9 +19,12 @@ class LogWriter(private val context: Context) {
         private const val LOG_FILE_PREFIX_CRASH = "TXAAPP_crash_"
         private const val LOG_FILE_PREFIX_UPDATE_CHECK = "TXAAPP_updatecheck_"
         private const val LOG_FILE_PREFIX_PASSKEY = "TXAAPP_passkey_"
+        private const val LOG_FILE_PREFIX_LOGIN = "login_"
+        private const val LOG_FILE_PREFIX_PASSKEY_API = "passkey_"
         private const val LOG_FILE_EXTENSION = ".txa"
+        private const val LOG_FILE_EXTENSION_TXT = ".txt"
         private const val MAX_LOG_FILE_SIZE = 5 * 1024 * 1024 // 5MB per file
-        private const val MAX_LOG_FILES = 20 // Giữ tối đa 20 file log
+        private const val MAX_LOG_FILES = 5 // Giữ tối đa 5 file log
     }
     
     /**
@@ -461,6 +464,102 @@ class LogWriter(private val context: Context) {
     }
     
     /**
+     * Ghi log Login/Register API vào file riêng
+     * Format: login_YYYYMMDD_HHmmss.txt
+     */
+    fun writeLoginLog(method: String, url: String, requestBody: String, responseCode: Int, responseBody: String, duration: Long) {
+        // Kiểm tra xem log API có được bật không
+        val logSettings = LogSettingsManager(context)
+        if (!logSettings.isApiLogEnabled()) {
+            return
+        }
+        
+        if (!hasWritePermission()) {
+            return
+        }
+        
+        try {
+            val logFolder = getLogFolder()
+            if (!logFolder.exists()) {
+                logFolder.mkdirs()
+            }
+            
+            // Tạo tên file theo format: login_YYYYMMDD_HHmmss.txt
+            val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+            val fileName = "${LOG_FILE_PREFIX_LOGIN}${timestamp}${LOG_FILE_EXTENSION_TXT}"
+            val logFile = File(logFolder, fileName)
+            
+            // Ghi log
+            FileWriter(logFile, true).use { writer ->
+                writer.append("=== Login/Register API Log ===\n")
+                writer.append("Time: ${SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.getDefault()).format(Date())}\n")
+                writer.append("Method: $method\n")
+                writer.append("URL: $url\n")
+                writer.append("Duration: ${duration}ms\n")
+                writer.append("\n--- Request ---\n")
+                writer.append("Body: $requestBody\n")
+                writer.append("\n--- Response ---\n")
+                writer.append("Status: $responseCode\n")
+                writer.append("Body: $responseBody\n")
+                writer.append("=== End Log ===\n\n")
+            }
+            
+            // Dọn dẹp file log cũ
+            cleanupOldLogFiles(logFolder)
+        } catch (e: Exception) {
+            android.util.Log.e("LogWriter", "Failed to write login log", e)
+        }
+    }
+    
+    /**
+     * Ghi log Passkey API vào file riêng
+     * Format: passkey_YYYYMMDD_HHmmss.txt
+     */
+    fun writePasskeyApiLog(method: String, url: String, requestBody: String, responseCode: Int, responseBody: String, duration: Long) {
+        // Kiểm tra xem log Passkey có được bật không
+        val logSettings = LogSettingsManager(context)
+        if (!logSettings.isPasskeyLogEnabled()) {
+            return
+        }
+        
+        if (!hasWritePermission()) {
+            return
+        }
+        
+        try {
+            val logFolder = getLogFolder()
+            if (!logFolder.exists()) {
+                logFolder.mkdirs()
+            }
+            
+            // Tạo tên file theo format: passkey_YYYYMMDD_HHmmss.txt
+            val timestamp = SimpleDateFormat("yyyyMMdd_HHmmss", Locale.getDefault()).format(Date())
+            val fileName = "${LOG_FILE_PREFIX_PASSKEY_API}${timestamp}${LOG_FILE_EXTENSION_TXT}"
+            val logFile = File(logFolder, fileName)
+            
+            // Ghi log
+            FileWriter(logFile, true).use { writer ->
+                writer.append("=== Passkey API Log ===\n")
+                writer.append("Time: ${SimpleDateFormat("yyyy-MM-dd HH:mm:ss.SSS", Locale.getDefault()).format(Date())}\n")
+                writer.append("Method: $method\n")
+                writer.append("URL: $url\n")
+                writer.append("Duration: ${duration}ms\n")
+                writer.append("\n--- Request ---\n")
+                writer.append("Body: $requestBody\n")
+                writer.append("\n--- Response ---\n")
+                writer.append("Status: $responseCode\n")
+                writer.append("Body: $responseBody\n")
+                writer.append("=== End Log ===\n\n")
+            }
+            
+            // Dọn dẹp file log cũ
+            cleanupOldLogFiles(logFolder)
+        } catch (e: Exception) {
+            android.util.Log.e("LogWriter", "Failed to write passkey API log", e)
+        }
+    }
+    
+    /**
      * Lấy tất cả file log
      */
     fun getAllLogFiles(): List<File> {
@@ -471,7 +570,7 @@ class LogWriter(private val context: Context) {
             }
             
             logFolder.listFiles { file ->
-                file.isFile && file.name.endsWith(LOG_FILE_EXTENSION)
+                file.isFile && (file.name.endsWith(LOG_FILE_EXTENSION) || file.name.endsWith(LOG_FILE_EXTENSION_TXT))
             }?.sortedByDescending { it.lastModified() }?.toList() ?: emptyList()
         } catch (e: Exception) {
             emptyList()

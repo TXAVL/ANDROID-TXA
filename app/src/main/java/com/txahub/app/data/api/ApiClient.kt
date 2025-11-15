@@ -26,6 +26,7 @@ object ApiClient {
     private val apiLoggingInterceptor = Interceptor { chain ->
         val request = chain.request()
         val startTime = System.currentTimeMillis()
+        val urlString = request.url.toString()
         
         // Log request body nếu có
         var requestBodyString = ""
@@ -43,13 +44,51 @@ object ApiClient {
         val endTime = System.currentTimeMillis()
         val duration = endTime - startTime
         
+        // Đọc response body
+        val responseBodyString = try {
+            val responseBody = response.peekBody(1024 * 1024) // Peek 1MB
+            responseBody.string()
+        } catch (e: Exception) {
+            "[Unable to read response body: ${e.message}]"
+        }
+        
         // Ghi log API
         context?.let { ctx ->
             val logWriter = LogWriter(ctx)
+            
+            // Kiểm tra xem có phải login/register API không
+            val isLoginApi = urlString.contains("/auth/login") || urlString.contains("/auth/register")
+            
+            // Kiểm tra xem có phải passkey API không
+            val isPasskeyApi = urlString.contains("/passkey-api/")
+            
+            if (isLoginApi) {
+                // Log vào file login riêng
+                logWriter.writeLoginLog(
+                    method = request.method,
+                    url = urlString,
+                    requestBody = requestBodyString,
+                    responseCode = response.code,
+                    responseBody = responseBodyString,
+                    duration = duration
+                )
+            } else if (isPasskeyApi) {
+                // Log vào file passkey riêng
+                logWriter.writePasskeyApiLog(
+                    method = request.method,
+                    url = urlString,
+                    requestBody = requestBodyString,
+                    responseCode = response.code,
+                    responseBody = responseBodyString,
+                    duration = duration
+                )
+            }
+            
+            // Vẫn log vào file API chung (nếu cần)
             val logData = buildString {
                 append("=== API Request ===\n")
                 append("Method: ${request.method}\n")
-                append("URL: ${request.url}\n")
+                append("URL: $urlString\n")
                 append("Headers: ${request.headers}\n")
                 if (requestBodyString.isNotEmpty()) {
                     append("Body: $requestBodyString\n")
@@ -58,15 +97,10 @@ object ApiClient {
                 append("Status: ${response.code} ${response.message}\n")
                 append("Duration: ${duration}ms\n")
                 append("Headers: ${response.headers}\n")
-                try {
-                    val responseBody = response.peekBody(1024 * 1024) // Peek 1MB
-                    append("Body: ${responseBody.string()}\n")
-                } catch (e: Exception) {
-                    append("Body: [Unable to read response body: ${e.message}]\n")
-                }
+                append("Body: $responseBodyString\n")
                 append("=== End Log ===\n\n")
             }
-            logWriter.writeApiLog(logData, request.url.toString())
+            logWriter.writeApiLog(logData, urlString)
         }
         
         response
