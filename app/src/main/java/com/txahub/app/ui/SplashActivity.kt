@@ -296,12 +296,30 @@ class SplashActivity : AppCompatActivity() {
                 // Đã có token, set vào ApiClient và chuyển đến MainActivity
                 ApiClient.setAuthToken(token)
                 Handler(Looper.getMainLooper()).postDelayed({
+                    // Đảm bảo UpdateCheckService được start để hiển thị notification "app đang chạy nền"
+                    try {
+                        if (com.txahub.app.utils.UpdateCheckService.hasBatteryOptimizationPermission(this@SplashActivity)) {
+                            com.txahub.app.utils.UpdateCheckService.startIfAllowed(this@SplashActivity)
+                        }
+                    } catch (e: Exception) {
+                        android.util.Log.e("SplashActivity", "Error starting UpdateCheckService", e)
+                    }
+                    
                     startActivity(Intent(this@SplashActivity, MainActivity::class.java))
                     finish()
                 }, 500) // Giảm delay xuống 500ms
             } else {
                 // Chưa đăng nhập, chuyển đến LoginActivity
                 Handler(Looper.getMainLooper()).postDelayed({
+                    // Đảm bảo UpdateCheckService được start để hiển thị notification "app đang chạy nền"
+                    try {
+                        if (com.txahub.app.utils.UpdateCheckService.hasBatteryOptimizationPermission(this@SplashActivity)) {
+                            com.txahub.app.utils.UpdateCheckService.startIfAllowed(this@SplashActivity)
+                        }
+                    } catch (e: Exception) {
+                        android.util.Log.e("SplashActivity", "Error starting UpdateCheckService", e)
+                    }
+                    
                     startActivity(Intent(this@SplashActivity, LoginActivity::class.java))
                     finish()
                 }, 500) // Giảm delay xuống 500ms

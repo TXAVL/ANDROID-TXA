@@ -283,14 +283,9 @@ class LogWriter(private val context: Context) {
     
     /**
      * Ghi log Passkey (theo ngày)
+     * Luôn ghi log sau khi cấp quyền ghi file, bất kể setting
      */
     fun writePasskeyLog(message: String, level: String = "INFO") {
-        // Kiểm tra xem log Passkey có được bật không
-        val logSettings = LogSettingsManager(context)
-        if (!logSettings.isPasskeyLogEnabled()) {
-            return
-        }
-        
         if (!hasWritePermission()) {
             return
         }

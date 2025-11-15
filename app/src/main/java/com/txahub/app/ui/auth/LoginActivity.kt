@@ -190,6 +190,20 @@ class LoginActivity : AppCompatActivity() {
                         preferencesManager.setRememberMe(true)
                     }
                     
+                    // Ghi log sau khi đăng nhập thành công
+                    val logWriter = com.txahub.app.utils.LogWriter(this@LoginActivity)
+                    logWriter.writeAppLog(
+                        "=== Login Success ===\n" +
+                        "Email: ${authResponse.user.email}\n" +
+                        "Name: ${authResponse.user.name}\n" +
+                        "User ID: ${authResponse.user.id}\n" +
+                        "Is Admin: ${authResponse.user.isAdmin}\n" +
+                        "Email Verified: ${authResponse.user.emailVerifiedAt != null}\n" +
+                        "Token: ${authResponse.token.take(20)}...",
+                        "LoginActivity",
+                        android.util.Log.INFO
+                    )
+                    
                     // Kiểm tra email đã xác minh chưa
                     if (authResponse.user.emailVerifiedAt == null) {
                         showEmailVerificationDialog(email)
@@ -400,13 +414,23 @@ class LoginActivity : AppCompatActivity() {
         
         lifecycleScope.launch {
             try {
+                // Log bắt đầu tạo challenge
+                val logWriter = com.txahub.app.utils.LogWriter(this@LoginActivity)
+                logWriter.writePasskeyLog("=== Starting Passkey Authentication ===", "INFO")
+                logWriter.writePasskeyLog("Requesting challenge for authentication", "DEBUG")
+                
                 // Gọi API để lấy challenge
                 val response = ApiClient.passkeyApi.createChallenge(
                     PasskeyModels.CreateChallengeRequest("authentication")
                 )
                 
+                // Log response
+                logWriter.writePasskeyLog("API Response - Code: ${response.code()}, Success: ${response.isSuccessful}", "DEBUG")
+                
                 if (response.isSuccessful && response.body()?.success == true) {
                     val challengeData = response.body()!!.data!!
+                    
+                    logWriter.writePasskeyLog("Challenge received - ID: ${challengeData.challengeId}, RP: ${challengeData.rp.id}", "INFO")
                     
                     // Lưu challenge_id để dùng khi verify
                     currentChallengeId = challengeData.challengeId
@@ -421,10 +445,25 @@ class LoginActivity : AppCompatActivity() {
                         put("hostname", challengeData.rp.id)
                     }
                     
+                    logWriter.writePasskeyLog("Calling PasskeyManager.getPasskey()", "DEBUG")
+                    
                     // Gọi PasskeyManager để lấy Passkey
                     passkeyManager.getPasskey(config.toString(), "onPasskeyRetrieved", this@LoginActivity)
                 } else {
                     val errorMessage = response.body()?.message ?: "Không thể tạo challenge"
+                    val responseCode = response.code()
+                    val fullError = "Error: $errorMessage (Code: $responseCode)"
+                    
+                    logWriter.writePasskeyLog(fullError, "ERROR")
+                    if (response.errorBody() != null) {
+                        try {
+                            val errorBody = response.errorBody()!!.string()
+                            logWriter.writePasskeyLog("Error Body: $errorBody", "ERROR")
+                        } catch (e: Exception) {
+                            logWriter.writePasskeyLog("Cannot read error body: ${e.message}", "ERROR")
+                        }
+                    }
+                    
                     Toast.makeText(
                         this@LoginActivity,
                         errorMessage,
@@ -434,6 +473,9 @@ class LoginActivity : AppCompatActivity() {
                     binding.btnPasskeyLogin.isEnabled = true
                 }
             } catch (e: Exception) {
+                val logWriter = com.txahub.app.utils.LogWriter(this@LoginActivity)
+                logWriter.writePasskeyLog("Exception: ${e.message}\n${e.stackTraceToString()}", "ERROR")
+                
                 Toast.makeText(
                     this@LoginActivity,
                     "Lỗi: ${e.message}",

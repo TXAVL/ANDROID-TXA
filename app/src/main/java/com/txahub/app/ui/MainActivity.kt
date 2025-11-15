@@ -203,6 +203,21 @@ class MainActivity : AppCompatActivity() {
                     binding.tvClicksToday.text = getString(R.string.txa_global_clicks_today_format, getString(R.string.txa_global_clicks_today), stats.clicksToday)
                     binding.tvClicksWeek.text = getString(R.string.txa_global_clicks_week_format, getString(R.string.txa_global_clicks_week), stats.clicksThisWeek)
                     binding.tvClicksMonth.text = getString(R.string.txa_global_clicks_month_format, getString(R.string.txa_global_clicks_month), stats.clicksThisMonth)
+                    
+                    // Ghi log dashboard data sau khi load thành công
+                    val logWriter = com.txahub.app.utils.LogWriter(this@MainActivity)
+                    logWriter.writeAppLog(
+                        "=== Dashboard Data Loaded ===\n" +
+                        "Total Clicks: ${stats.totalClicks}\n" +
+                        "Total Links: ${stats.totalLinks}\n" +
+                        "Total Projects: ${stats.totalProjects}\n" +
+                        "Clicks Today: ${stats.clicksToday}\n" +
+                        "Clicks This Week: ${stats.clicksThisWeek}\n" +
+                        "Clicks This Month: ${stats.clicksThisMonth}\n" +
+                        "Top Links Count: ${stats.topLinks.size}",
+                        "MainActivity",
+                        android.util.Log.INFO
+                    )
                 },
                 onFailure = { error ->
                     Toast.makeText(

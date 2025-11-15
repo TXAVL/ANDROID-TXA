@@ -419,12 +419,10 @@ class PasskeyManager(private val context: Context) {
     
     /**
      * Log Passkey operations
+     * Luôn log vào file sau khi cấp quyền ghi file, bất kể setting
      */
     private fun logPasskey(level: String, message: String) {
-        if (!logSettings.isPasskeyLogEnabled()) {
-            return
-        }
-        
+        // Luôn log vào logcat
         when (level) {
             "DEBUG" -> Log.d(TAG, message)
             "INFO" -> Log.i(TAG, message)
@@ -432,6 +430,7 @@ class PasskeyManager(private val context: Context) {
             "ERROR" -> Log.e(TAG, message)
         }
         
+        // Luôn ghi vào file nếu có quyền (không kiểm tra setting)
         logWriter.writePasskeyLog(message, level)
     }
     
