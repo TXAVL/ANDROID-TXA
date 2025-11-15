@@ -9,6 +9,7 @@ import com.txahub.app.utils.NotificationSoundManager
 import com.txahub.app.utils.NotificationHelper
 import com.txahub.app.utils.UpdateCheckService
 import com.txahub.app.utils.LogWriter
+import com.txahub.app.utils.LogSettingsManager
 import java.lang.Thread.UncaughtExceptionHandler
 import kotlinx.coroutines.runBlocking
 
@@ -51,6 +52,15 @@ class TXAApplication : Application() {
             setupCrashHandler()
         } catch (e: Exception) {
             android.util.Log.e("TXAApplication", "Error setting up crash handler", e)
+            // Vẫn tiếp tục để app có thể chạy
+        }
+        
+        try {
+            // Bật tất cả log settings theo mặc định (ghi đè lên setting hiện tại)
+            val logSettingsManager = LogSettingsManager(this)
+            logSettingsManager.enableAllLogs() // Đảm bảo tất cả log đều bật
+        } catch (e: Exception) {
+            android.util.Log.e("TXAApplication", "Error initializing log settings", e)
             // Vẫn tiếp tục để app có thể chạy
         }
         

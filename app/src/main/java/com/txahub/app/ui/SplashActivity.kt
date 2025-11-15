@@ -23,12 +23,16 @@ class SplashActivity : AppCompatActivity() {
     private lateinit var permissionManager: PermissionManager
     private var hasShownChangelog = false
     private var hasShownPermissions = false
+    private var splashTimeoutHandler: Handler? = null
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         
         try {
             setContentView(R.layout.activity_splash)
+            
+            // Chạy animation splash screen
+            startSplashAnimation()
             
             preferencesManager = PreferencesManager(this)
             permissionManager = PermissionManager(this)
@@ -38,8 +42,17 @@ class SplashActivity : AppCompatActivity() {
             
             // Nếu đã xử lý deeplink, không cần chạy các bước tiếp theo
             if (!handledDeepLink) {
-                // Kiểm tra quyền trước
-                checkPermissionsAndProceed()
+                // Kiểm tra quyền sau khi animation bắt đầu (delay ngắn hơn)
+                Handler(Looper.getMainLooper()).postDelayed({
+                    checkPermissionsAndProceed()
+                }, 800) // Đợi 800ms để animation logo bắt đầu
+                
+                // Timeout: Nếu sau 10 giây vẫn chưa chuyển màn hình, force chuyển
+                splashTimeoutHandler = Handler(Looper.getMainLooper())
+                splashTimeoutHandler?.postDelayed({
+                    android.util.Log.w("SplashActivity", "Splash timeout, forcing navigation")
+                    proceedToNextScreen()
+                }, 10000) // 10 giây timeout
             }
         } catch (e: Exception) {
             android.util.Log.e("SplashActivity", "Error in onCreate", e)
@@ -73,6 +86,33 @@ class SplashActivity : AppCompatActivity() {
                 }
             }
         }
+    }
+    
+    private fun startSplashAnimation() {
+        val ivLogo = findViewById<android.widget.ImageView>(R.id.ivLogo)
+        val tvAppName = findViewById<android.widget.TextView>(R.id.tvAppName)
+        val progressBar = findViewById<android.widget.ProgressBar>(R.id.progressBar)
+        
+        // Ẩn ban đầu
+        ivLogo.alpha = 0f
+        tvAppName.alpha = 0f
+        
+        // Chạy animation cho logo
+        val logoAnimation = android.view.animation.AnimationUtils.loadAnimation(this, R.anim.splash_logo_animation)
+        ivLogo.startAnimation(logoAnimation)
+        ivLogo.animate().alpha(1f).setDuration(800).start()
+        
+        // Chạy animation cho text sau 300ms
+        Handler(Looper.getMainLooper()).postDelayed({
+            val textAnimation = android.view.animation.AnimationUtils.loadAnimation(this, R.anim.splash_text_animation)
+            tvAppName.startAnimation(textAnimation)
+            tvAppName.animate().alpha(1f).setDuration(600).start()
+        }, 300)
+        
+        // Hiển thị progress bar sau khi animation xong
+        Handler(Looper.getMainLooper()).postDelayed({
+            progressBar.visibility = android.view.View.VISIBLE
+        }, 1200)
     }
     
     override fun onNewIntent(intent: Intent?) {
@@ -162,6 +202,7 @@ class SplashActivity : AppCompatActivity() {
                 // Chỉ tiếp tục nếu TẤT CẢ quyền đã được cấp
                 if (allGranted) {
                     permissionDialog = null
+                    splashTimeoutHandler?.removeCallbacksAndMessages(null)
                     checkChangelogAndProceed()
                 } else {
                     // Chưa cấp đủ quyền, kiểm tra lại sau khi quay lại từ Settings
@@ -170,10 +211,19 @@ class SplashActivity : AppCompatActivity() {
             }
         } else if (missingPermissions.isEmpty()) {
             // Đã có đủ quyền, kiểm tra changelog
+            splashTimeoutHandler?.removeCallbacksAndMessages(null)
             checkChangelogAndProceed()
         } else {
             // Đã hiển thị dialog nhưng vẫn còn quyền chưa cấp
-            // Không làm gì, chờ user quay lại từ Settings (onResume sẽ xử lý)
+            // Kiểm tra lại sau 2 giây để tránh treo
+            Handler(Looper.getMainLooper()).postDelayed({
+                if (hasShownPermissions) {
+                    // Nếu vẫn còn quyền chưa cấp sau 2 giây, tiếp tục với quyền hiện có
+                    android.util.Log.w("SplashActivity", "Some permissions not granted, proceeding anyway")
+                    splashTimeoutHandler?.removeCallbacksAndMessages(null)
+                    checkChangelogAndProceed()
+                }
+            }, 2000)
         }
     }
     
@@ -187,7 +237,16 @@ class SplashActivity : AppCompatActivity() {
             // Hiển thị changelog
             hasShownChangelog = true
             val updateChecker = UpdateChecker(this)
+            
+            // Timeout cho việc check update: nếu quá 3 giây thì bỏ qua
+            val updateCheckTimeout = Handler(Looper.getMainLooper())
+            updateCheckTimeout.postDelayed({
+                android.util.Log.w("SplashActivity", "Update check timeout, proceeding")
+                proceedToNextScreen()
+            }, 3000)
+            
             updateChecker.checkUpdate { updateInfo ->
+                updateCheckTimeout.removeCallbacksAndMessages(null)
                 runOnUiThread {
                     if (updateInfo != null) {
                         // Có bản cập nhật, hiển thị changelog
@@ -217,6 +276,9 @@ class SplashActivity : AppCompatActivity() {
     }
     
     private fun proceedToNextScreen() {
+        // Hủy timeout nếu đã được set
+        splashTimeoutHandler?.removeCallbacksAndMessages(null)
+        
         // Kiểm tra đăng nhập
         CoroutineScope(Dispatchers.Main).launch {
             val token = preferencesManager.getAuthTokenSync()
@@ -226,13 +288,13 @@ class SplashActivity : AppCompatActivity() {
                 Handler(Looper.getMainLooper()).postDelayed({
                     startActivity(Intent(this@SplashActivity, MainActivity::class.java))
                     finish()
-                }, 1000)
+                }, 500) // Giảm delay xuống 500ms
             } else {
                 // Chưa đăng nhập, chuyển đến LoginActivity
                 Handler(Looper.getMainLooper()).postDelayed({
                     startActivity(Intent(this@SplashActivity, LoginActivity::class.java))
                     finish()
-                }, 1000)
+                }, 500) // Giảm delay xuống 500ms
             }
         }
     }

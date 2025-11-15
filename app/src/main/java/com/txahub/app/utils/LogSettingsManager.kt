@@ -106,6 +106,29 @@ class LogSettingsManager(private val context: Context) {
             .putBoolean(KEY_LOG_PASSKEY_ENABLED, DEFAULT_ENABLED)
             .apply()
     }
+    
+    /**
+     * Khởi tạo log settings lần đầu (chỉ set nếu chưa có giá trị)
+     */
+    fun initializeIfNeeded() {
+        // Chỉ set nếu chưa có key nào được lưu (lần đầu khởi động)
+        if (!prefs.contains(KEY_LOG_API_ENABLED)) {
+            resetToDefaults()
+        }
+    }
+    
+    /**
+     * Bật tất cả log (ghi đè lên setting hiện tại)
+     */
+    fun enableAllLogs() {
+        prefs.edit()
+            .putBoolean(KEY_LOG_API_ENABLED, true)
+            .putBoolean(KEY_LOG_APP_ENABLED, true)
+            .putBoolean(KEY_LOG_CRASH_ENABLED, true)
+            .putBoolean(KEY_LOG_UPDATE_CHECK_ENABLED, true)
+            .putBoolean(KEY_LOG_PASSKEY_ENABLED, true)
+            .apply()
+    }
 }
 
 
