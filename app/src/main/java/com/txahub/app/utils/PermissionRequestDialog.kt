@@ -9,16 +9,72 @@ import com.txahub.app.R
 class PermissionRequestDialog(private val activity: Activity) {
     
     private val permissionManager = PermissionManager(activity)
+    private var dialog: AlertDialog? = null
+    private var layoutPermissions: android.widget.LinearLayout? = null
+    private var callback: ((Boolean) -> Unit)? = null
     
     /**
      * Hiển thị dialog yêu cầu quyền
      */
     fun show(callback: (allGranted: Boolean) -> Unit) {
+        this.callback = callback
         val missingPermissions = permissionManager.getMissingPermissions()
         
         if (missingPermissions.isEmpty()) {
             // Tất cả quyền đã được cấp
             callback(true)
+            return
+        }
+        
+        // Tạo dialog
+        val dialogView = activity.layoutInflater.inflate(R.layout.dialog_permission_request, null)
+        dialog = AlertDialog.Builder(activity)
+            .setTitle(R.string.txa_global_permissions_required)
+            .setView(dialogView)
+            .setCancelable(false)
+            .create()
+        
+        // Setup RecyclerView hoặc LinearLayout để hiển thị danh sách quyền
+        // Ở đây tôi sẽ dùng LinearLayout đơn giản
+        layoutPermissions = dialogView.findViewById<android.widget.LinearLayout>(R.id.layoutPermissions)
+        val btnContinue = dialogView.findViewById<android.widget.Button>(R.id.btnContinue)
+        
+        // Refresh danh sách quyền
+        refreshPermissionList()
+        
+        // Xử lý nút Continue
+        btnContinue.setOnClickListener {
+            // Kiểm tra lại quyền
+            val stillMissing = permissionManager.getMissingPermissions()
+            if (stillMissing.isEmpty()) {
+                dialog?.dismiss()
+                callback.invoke(true)
+            } else {
+                // Vẫn còn quyền chưa cấp, KHÔNG cho phép tiếp tục
+                Toast.makeText(
+                    activity,
+                    "Vui lòng cấp đầy đủ quyền để sử dụng ứng dụng",
+                    Toast.LENGTH_LONG
+                ).show()
+                // Refresh lại danh sách để cập nhật trạng thái
+                refreshPermissionList()
+            }
+        }
+        
+        dialog?.show()
+    }
+    
+    /**
+     * Refresh danh sách quyền (gọi khi quay lại từ Settings)
+     */
+    fun refreshPermissionList() {
+        val missingPermissions = permissionManager.getMissingPermissions()
+        layoutPermissions?.removeAllViews()
+        
+        if (missingPermissions.isEmpty()) {
+            // Tất cả quyền đã được cấp
+            dialog?.dismiss()
+            callback?.invoke(true)
             return
         }
         
@@ -30,43 +86,11 @@ class PermissionRequestDialog(private val activity: Activity) {
             )
         }
         
-        // Tạo dialog
-        val dialogView = activity.layoutInflater.inflate(R.layout.dialog_permission_request, null)
-        val dialog = AlertDialog.Builder(activity)
-            .setTitle(R.string.txa_global_permissions_required)
-            .setView(dialogView)
-            .setCancelable(false)
-            .create()
-        
-        // Setup RecyclerView hoặc LinearLayout để hiển thị danh sách quyền
-        // Ở đây tôi sẽ dùng LinearLayout đơn giản
-        val layoutPermissions = dialogView.findViewById<android.widget.LinearLayout>(R.id.layoutPermissions)
-        val btnContinue = dialogView.findViewById<android.widget.Button>(R.id.btnContinue)
-        
-        // Xóa các view cũ
-        layoutPermissions.removeAllViews()
-        
         // Thêm các item quyền
         permissionItems.forEach { item ->
             val itemView = createPermissionItemView(item)
-            layoutPermissions.addView(itemView)
+            layoutPermissions?.addView(itemView)
         }
-        
-        // Xử lý nút Continue
-        btnContinue.setOnClickListener {
-            // Kiểm tra lại quyền
-            val stillMissing = permissionManager.getMissingPermissions()
-            if (stillMissing.isEmpty()) {
-                dialog.dismiss()
-                callback(true)
-            } else {
-                // Vẫn còn quyền chưa cấp, nhưng vẫn cho phép tiếp tục
-                dialog.dismiss()
-                callback(false)
-            }
-        }
-        
-        dialog.show()
     }
     
     /**
@@ -76,7 +100,6 @@ class PermissionRequestDialog(private val activity: Activity) {
         val itemView = activity.layoutInflater.inflate(R.layout.item_permission, null)
         val tvPermissionName = itemView.findViewById<android.widget.TextView>(R.id.tvPermissionName)
         val tvPermissionDesc = itemView.findViewById<android.widget.TextView>(R.id.tvPermissionDesc)
-        val ivCheck = itemView.findViewById<android.widget.ImageView>(R.id.ivCheck)
         val btnGrant = itemView.findViewById<android.widget.Button>(R.id.btnGrant)
         
         tvPermissionName.text = item.permission.name
@@ -128,11 +151,7 @@ class PermissionRequestDialog(private val activity: Activity) {
             // Mở cài đặt
             try {
                 activity.startActivity(permissionInfo.settingsIntent)
-                Toast.makeText(
-                    activity,
-                    activity.getString(R.string.txa_global_permission_denied_toast, permissionInfo.name),
-                    Toast.LENGTH_SHORT
-                ).show()
+                // Không hiển thị toast nữa, để user tập trung vào cài đặt
             } catch (e: Exception) {
                 Toast.makeText(
                     activity,

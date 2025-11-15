@@ -157,14 +157,23 @@ class SplashActivity : AppCompatActivity() {
         if (missingPermissions.isNotEmpty() && !hasShownPermissions) {
             // Hiển thị dialog yêu cầu quyền
             hasShownPermissions = true
-            val dialog = PermissionRequestDialog(this)
-            dialog.show { _ ->
-                // Sau khi đóng dialog, kiểm tra changelog
-                checkChangelogAndProceed()
+            permissionDialog = PermissionRequestDialog(this)
+            permissionDialog?.show { allGranted ->
+                // Chỉ tiếp tục nếu TẤT CẢ quyền đã được cấp
+                if (allGranted) {
+                    permissionDialog = null
+                    checkChangelogAndProceed()
+                } else {
+                    // Chưa cấp đủ quyền, kiểm tra lại sau khi quay lại từ Settings
+                    // (onResume sẽ gọi refreshPermissionList)
+                }
             }
-        } else {
-            // Đã có đủ quyền hoặc đã hiển thị dialog, kiểm tra changelog
+        } else if (missingPermissions.isEmpty()) {
+            // Đã có đủ quyền, kiểm tra changelog
             checkChangelogAndProceed()
+        } else {
+            // Đã hiển thị dialog nhưng vẫn còn quyền chưa cấp
+            // Không làm gì, chờ user quay lại từ Settings (onResume sẽ xử lý)
         }
     }
     
@@ -237,10 +246,16 @@ class SplashActivity : AppCompatActivity() {
         }
     }
     
+    private var permissionDialog: PermissionRequestDialog? = null
+    
     override fun onResume() {
         super.onResume()
-        // Khi quay lại từ cài đặt, kiểm tra lại quyền
+        // Khi quay lại từ cài đặt, refresh dialog nếu đang hiển thị
+        permissionDialog?.refreshPermissionList()
+        
+        // Kiểm tra lại quyền
         if (hasShownPermissions) {
+            hasShownPermissions = false // Reset để có thể hiển thị dialog lại nếu vẫn còn quyền chưa cấp
             checkPermissionsAndProceed()
         }
     }

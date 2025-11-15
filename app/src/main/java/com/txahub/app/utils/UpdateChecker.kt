@@ -30,9 +30,9 @@ data class VersionChangelog(
 class UpdateChecker(private val context: Context) {
     
     // Hỗ trợ cả /latest (đúng chính tả) và /lastest (typo - để tương thích)
-    private val API_URL_LATEST = "https://software.txahub.click/product/txahubapp/latest"
-    private val API_URL_LASTEST = "https://software.txahub.click/product/txahubapp/lastest"
-    private val API_URL_ALL_CHANGELOGS = "https://software.txahub.click/product/txahubapp/changelogs"
+    private val API_URL_LATEST = "https://software.txahub.click/product/txaapp/latest"
+    private val API_URL_LASTEST = "https://software.txahub.click/product/txaapp/lastest"
+    private val API_URL_ALL_CHANGELOGS = "https://software.txahub.click/product/txaapp/changelogs"
     private val logWriter = LogWriter(context)
     
     /**

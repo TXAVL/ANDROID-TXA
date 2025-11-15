@@ -438,11 +438,6 @@ class LoginActivity : AppCompatActivity() {
                         // Chuyển đến MainActivity
                         navigateToMain()
                     } else {
-                        // Theo docs, verify_authentication chỉ trả về success và message
-                        // Server tự động tạo session, nhưng không trả về token trong response
-                        // Cần gọi API /api/user để lấy thông tin user và api_key (dùng làm token)
-                        // Vì server đã tạo session, có thể gọi getUser() mà không cần token
-                        // (hoặc server có thể trả về token trong response nếu có)
                         try {
                             // Thử gọi getUser() - server có thể dùng session để xác thực
                             val userResponse = ApiClient.authApi.getUser()

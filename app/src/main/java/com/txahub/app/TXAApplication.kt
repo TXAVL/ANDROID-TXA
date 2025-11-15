@@ -73,30 +73,58 @@ class TXAApplication : Application() {
             // Khởi tạo và thêm nhạc chuông vào MediaStore
             val soundManager = NotificationSoundManager(this)
             // Tự động tìm tất cả file nhạc chuông trong res/raw
-            // Nếu có >= 2 file, random chọn 1 file để khởi tạo
-            // Nếu có 1 file, dùng file đó
+            // Copy TẤT CẢ file vào external storage (không random)
+            // Sau đó random chọn 1 file để set làm default
             try {
                 val rawFiles = findRawSoundFiles()
                 if (rawFiles.isNotEmpty()) {
-                    val selectedFile = if (rawFiles.size >= 2) {
-                        // Random chọn 1 file nếu có >= 2 file
-                        rawFiles.random()
-                    } else {
-                        // Dùng file duy nhất nếu chỉ có 1 file
-                        rawFiles[0]
+                    // Copy TẤT CẢ file từ res/raw vào external storage
+                    for (rawFile in rawFiles) {
+                        val resourceId = resources.getIdentifier(rawFile.first, "raw", packageName)
+                        if (resourceId != 0) {
+                            soundManager.initializeDefaultAppSound(resourceId, rawFile.second)
+                        }
                     }
                     
-                    val resourceId = resources.getIdentifier(selectedFile.first, "raw", packageName)
-                    if (resourceId != 0) {
-                        soundManager.initializeDefaultAppSound(resourceId, selectedFile.second)
+                    // Sau khi copy tất cả, random chọn 1 file để set làm default
+                    val baseDir = getExternalFilesDir(null) ?: filesDir
+                    val soundFolder = java.io.File(baseDir, "notification_sounds")
+                    val soundFiles = soundFolder.listFiles { _, name ->
+                        name.endsWith(".mp3", ignoreCase = true) || name.endsWith(".wav", ignoreCase = true)
+                    }?.filter { it.isFile } ?: emptyList()
+                    
+                    if (soundFiles.isNotEmpty()) {
+                        // Random chọn 1 file
+                        val selectedFile = if (soundFiles.size > 1) {
+                            soundFiles.random()
+                        } else {
+                            soundFiles[0]
+                        }
+                        
+                        // Tạo URI và set làm default
+                        val selectedUri = try {
+                            androidx.core.content.FileProvider.getUriForFile(
+                                this,
+                                "${packageName}.fileprovider",
+                                selectedFile
+                            )
+                        } catch (e: Exception) {
+                            android.net.Uri.fromFile(selectedFile)
+                        }
+                        
+                        soundManager.setDefaultAppSoundUri(selectedUri)
+                        android.util.Log.d("TXAApplication", "Set default app sound: ${selectedFile.name}")
                     }
                 }
             } catch (e: Exception) {
                 logError("TXAApplication", "Error initializing default app sound", e, this)
             }
             
-            // Thêm tất cả nhạc chuông vào MediaStore
+            // Thêm tất cả nhạc chuông vào MediaStore (để xuất hiện trong danh sách hệ thống)
             soundManager.addAllAppSoundsToMediaStore()
+            
+            // Đăng ký nhạc chuông đã chọn (random) với hệ thống
+            soundManager.registerSelectedSoundAsNotification()
         } catch (e: Exception) {
             logError("TXAApplication", "Error initializing NotificationSoundManager", e, this)
         }
