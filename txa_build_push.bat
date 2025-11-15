@@ -143,7 +143,18 @@ if errorlevel 1 (
     echo ✅ Push successful.
 )
 
-echo 🎉 Done! APK uploaded: releases\!APK_DEST_NAME!
+REM --- Display success message with full GitHub link ---
+echo.
+echo ========================================
+echo 🎉 Build and Push Successful!
+echo ========================================
+echo 📦 APK File: releases\!APK_DEST_NAME!
+echo.
+echo 🔗 GitHub Repository: https://github.com/TXAVL/ANDROID-TXA
+echo 📥 Download Link: https://github.com/TXAVL/ANDROID-TXA/raw/main/releases/!APK_DEST_NAME!
+echo 📂 Releases Folder: https://github.com/TXAVL/ANDROID-TXA/tree/main/releases
+echo.
+echo ========================================
 
 endlocal
 

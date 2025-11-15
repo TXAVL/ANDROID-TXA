@@ -327,7 +327,8 @@ class SettingsActivity : AppCompatActivity() {
                         
                         // authenticatorSelection
                         put("authenticatorSelection", JSONObject().apply {
-                            put("authenticatorAttachment", challengeData.authenticatorSelection.authenticatorAttachment)
+                            // authenticatorAttachment không có trong API response, dùng giá trị mặc định
+                            put("authenticatorAttachment", "platform")
                             put("userVerification", challengeData.authenticatorSelection.userVerification)
                             put("residentKey", challengeData.authenticatorSelection.residentKey)
                         })
