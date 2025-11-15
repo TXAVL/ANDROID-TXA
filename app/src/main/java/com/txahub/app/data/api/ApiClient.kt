@@ -56,8 +56,13 @@ object ApiClient {
         context?.let { ctx ->
             val logWriter = LogWriter(ctx)
             
-            // Kiểm tra xem có phải login/register API không
-            val isLoginApi = urlString.contains("/auth/login") || urlString.contains("/auth/register")
+            // Kiểm tra xem có phải login/register/forgot-password/reset-password API không
+            val isLoginApi = urlString.contains("/auth/login") || 
+                           urlString.contains("/auth/register") ||
+                           urlString.contains("/auth/forgot-password") ||
+                           urlString.contains("/auth/reset-password") ||
+                           urlString.contains("/auth/resend-verification") ||
+                           urlString.contains("/auth/verify-email")
             
             // Kiểm tra xem có phải passkey API không
             val isPasskeyApi = urlString.contains("/passkey-api/")
