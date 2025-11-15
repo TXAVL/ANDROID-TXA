@@ -44,14 +44,9 @@ class LogWriter(private val context: Context) {
     
     /**
      * Ghi log API response vào file
+     * Luôn ghi log sau khi cấp quyền ghi file, bất kể setting
      */
     fun writeApiLog(response: String, apiUrl: String = "") {
-        // Kiểm tra xem log API có được bật không
-        val logSettings = LogSettingsManager(context)
-        if (!logSettings.isApiLogEnabled()) {
-            return
-        }
-        
         if (!hasWritePermission()) {
             // Hiển thị toast nếu chưa cấp quyền
             android.os.Handler(android.os.Looper.getMainLooper()).post {
@@ -466,14 +461,9 @@ class LogWriter(private val context: Context) {
     /**
      * Ghi log Login/Register API vào file riêng
      * Format: login_YYYYMMDD_HHmmss.txt
+     * Luôn ghi log sau khi cấp quyền ghi file, bất kể setting
      */
     fun writeLoginLog(method: String, url: String, requestBody: String, responseCode: Int, responseBody: String, duration: Long) {
-        // Kiểm tra xem log API có được bật không
-        val logSettings = LogSettingsManager(context)
-        if (!logSettings.isApiLogEnabled()) {
-            return
-        }
-        
         if (!hasWritePermission()) {
             return
         }
@@ -514,14 +504,9 @@ class LogWriter(private val context: Context) {
     /**
      * Ghi log Passkey API vào file riêng
      * Format: passkey_YYYYMMDD_HHmmss.txt
+     * Luôn ghi log sau khi cấp quyền ghi file, bất kể setting
      */
     fun writePasskeyApiLog(method: String, url: String, requestBody: String, responseCode: Int, responseBody: String, duration: Long) {
-        // Kiểm tra xem log Passkey có được bật không
-        val logSettings = LogSettingsManager(context)
-        if (!logSettings.isPasskeyLogEnabled()) {
-            return
-        }
-        
         if (!hasWritePermission()) {
             return
         }
