@@ -1,0 +1,67 @@
+=== CRASH REPORT ===
+Time: 2025-11-15 13:08:45
+App Version: 2.2.1_txa
+Android Version: 16
+Device: samsung SM-M336K
+Thread: main
+Exception: java.lang.RuntimeException
+Message: Unable to start activity ComponentInfo{com.txahub.app/com.txahub.app.ui.auth.LoginActivity}: java.lang.IllegalStateException: This Activity already has an action bar supplied by the window decor. Do not request Window.FEATURE_SUPPORT_ACTION_BAR and set windowActionBar to false in your theme to use a Toolbar instead.
+
+Stack Trace:
+java.lang.RuntimeException: Unable to start activity ComponentInfo{com.txahub.app/com.txahub.app.ui.auth.LoginActivity}: java.lang.IllegalStateException: This Activity already has an action bar supplied by the window decor. Do not request Window.FEATURE_SUPPORT_ACTION_BAR and set windowActionBar to false in your theme to use a Toolbar instead.
+	at android.app.ActivityThread.performLaunchActivity(ActivityThread.java:4710)
+	at android.app.ActivityThread.handleLaunchActivity(ActivityThread.java:4941)
+	at android.app.servertransaction.LaunchActivityItem.execute(LaunchActivityItem.java:222)
+	at android.app.servertransaction.TransactionExecutor.executeNonLifecycleItem(TransactionExecutor.java:133)
+	at android.app.servertransaction.TransactionExecutor.executeTransactionItems(TransactionExecutor.java:103)
+	at android.app.servertransaction.TransactionExecutor.execute(TransactionExecutor.java:80)
+	at android.app.ActivityThread$H.handleMessage(ActivityThread.java:3150)
+	at android.os.Handler.dispatchMessage(Handler.java:110)
+	at android.os.Looper.loopOnce(Looper.java:273)
+	at android.os.Looper.loop(Looper.java:363)
+	at android.app.ActivityThread.main(ActivityThread.java:10060)
+	at java.lang.reflect.Method.invoke(Native Method)
+	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:632)
+	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:975)
+Caused by: java.lang.IllegalStateException: This Activity already has an action bar supplied by the window decor. Do not request Window.FEATURE_SUPPORT_ACTION_BAR and set windowActionBar to false in your theme to use a Toolbar instead.
+	at androidx.appcompat.app.AppCompatDelegateImpl.setSupportActionBar(AppCompatDelegateImpl.java:630)
+	at androidx.appcompat.app.AppCompatActivity.setSupportActionBar(AppCompatActivity.java:185)
+	at com.txahub.app.ui.auth.LoginActivity.setupUI(LoginActivity.kt:70)
+	at com.txahub.app.ui.auth.LoginActivity.onCreate(LoginActivity.kt:65)
+	at android.app.Activity.performCreate(Activity.java:9519)
+	at android.app.Activity.performCreate(Activity.java:9488)
+	at android.app.Instrumentation.callActivityOnCreate(Instrumentation.java:1524)
+	at android.app.ActivityThread.performLaunchActivity(ActivityThread.java:4692)
+	... 13 more
+
+
+Caused by: java.lang.IllegalStateException
+Cause Message: This Activity already has an action bar supplied by the window decor. Do not request Window.FEATURE_SUPPORT_ACTION_BAR and set windowActionBar to false in your theme to use a Toolbar instead.
+Cause Stack Trace:
+java.lang.IllegalStateException: This Activity already has an action bar supplied by the window decor. Do not request Window.FEATURE_SUPPORT_ACTION_BAR and set windowActionBar to false in your theme to use a Toolbar instead.
+	at androidx.appcompat.app.AppCompatDelegateImpl.setSupportActionBar(AppCompatDelegateImpl.java:630)
+	at androidx.appcompat.app.AppCompatActivity.setSupportActionBar(AppCompatActivity.java:185)
+	at com.txahub.app.ui.auth.LoginActivity.setupUI(LoginActivity.kt:70)
+	at com.txahub.app.ui.auth.LoginActivity.onCreate(LoginActivity.kt:65)
+	at android.app.Activity.performCreate(Activity.java:9519)
+	at android.app.Activity.performCreate(Activity.java:9488)
+	at android.app.Instrumentation.callActivityOnCreate(Instrumentation.java:1524)
+	at android.app.ActivityThread.performLaunchActivity(ActivityThread.java:4692)
+	at android.app.ActivityThread.handleLaunchActivity(ActivityThread.java:4941)
+	at android.app.servertransaction.LaunchActivityItem.execute(LaunchActivityItem.java:222)
+	at android.app.servertransaction.TransactionExecutor.executeNonLifecycleItem(TransactionExecutor.java:133)
+	at android.app.servertransaction.TransactionExecutor.executeTransactionItems(TransactionExecutor.java:103)
+	at android.app.servertransaction.TransactionExecutor.execute(TransactionExecutor.java:80)
+	at android.app.ActivityThread$H.handleMessage(ActivityThread.java:3150)
+	at android.os.Handler.dispatchMessage(Handler.java:110)
+	at android.os.Looper.loopOnce(Looper.java:273)
+	at android.os.Looper.loop(Looper.java:363)
+	at android.app.ActivityThread.main(ActivityThread.java:10060)
+	at java.lang.reflect.Method.invoke(Native Method)
+	at com.android.internal.os.RuntimeInit$MethodAndArgsCaller.run(RuntimeInit.java:632)
+	at com.android.internal.os.ZygoteInit.main(ZygoteInit.java:975)
+
+
+=== END CRASH REPORT ===
+
+

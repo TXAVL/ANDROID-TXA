@@ -46,7 +46,7 @@
         <activity
             android:name=".ui.auth.LoginActivity"
             android:exported="false"
-            android:theme="@style/Theme.TXAHub" />
+            android:theme="@style/Theme.TXAHub.NoActionBar" />
         
         <activity
             android:name=".ui.MainActivity"
