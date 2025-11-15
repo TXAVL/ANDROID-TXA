@@ -13,6 +13,7 @@ import com.txahub.app.data.local.PreferencesManager
 import com.txahub.app.data.repository.AuthRepository
 import com.txahub.app.data.api.ApiClient
 import com.txahub.app.data.models.PasskeyModels
+import com.txahub.app.data.models.AuthResponse
 import com.txahub.app.ui.MainActivity
 import com.txahub.app.utils.PasskeyManager
 import kotlinx.coroutines.launch
@@ -420,19 +421,19 @@ class LoginActivity : AppCompatActivity() {
                 if (response.isSuccessful && response.body()?.success == true) {
                     // Theo docs, verify_authentication chỉ trả về success và message
                     // Server tự động tạo session, nhưng có thể trả về token trong data (optional)
-                    val verifyResponse = response.body()
-                    val authData = verifyResponse?.data
+                    val verifyResponse = response.body()?.data // ApiResponse.data = VerifyAuthenticationResponse?
+                    val authResponse: AuthResponse? = verifyResponse?.data // VerifyAuthenticationResponse.data = AuthResponse?
                     
-                    if (authData != null) {
+                    if (authResponse != null) {
                         // Nếu có data (token), lưu ngay
-                        preferencesManager.saveAuthToken(authData.token)
+                        preferencesManager.saveAuthToken(authResponse.token)
                         preferencesManager.saveUserInfo(
-                            authData.user.email,
-                            authData.user.name,
-                            authData.user.id.toString(),
-                            authData.user.isAdmin
+                            authResponse.user.email,
+                            authResponse.user.name,
+                            authResponse.user.id.toString(),
+                            authResponse.user.isAdmin
                         )
-                        ApiClient.setAuthToken(authData.token)
+                        ApiClient.setAuthToken(authResponse.token)
                         
                         // Chuyển đến MainActivity
                         navigateToMain()
