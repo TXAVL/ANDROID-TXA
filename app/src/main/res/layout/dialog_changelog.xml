@@ -11,7 +11,7 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:orientation="vertical"
-        android:background="?attr/colorBackground">
+        android:background="@android:color/white">
 
         <!-- Header -->
         <LinearLayout
@@ -72,7 +72,7 @@
             android:orientation="horizontal"
             android:padding="16dp"
             android:gravity="end"
-            android:background="?attr/colorBackground">
+            android:background="@android:color/white">
 
             <Button
                 android:id="@+id/btnOk"
