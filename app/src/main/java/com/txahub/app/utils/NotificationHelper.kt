@@ -50,11 +50,11 @@ class NotificationHelper(private val context: Context) {
                 notificationManager.createNotificationChannelGroup(group)
             }
             
-            // Channel cho thông báo cập nhật
+            // Channel cho thông báo cập nhật - MỨC ƯU TIÊN CAO NHẤT
             val updateChannel = NotificationChannel(
                 CHANNEL_ID_UPDATE,
                 CHANNEL_NAME_UPDATE,
-                NotificationManager.IMPORTANCE_HIGH
+                NotificationManager.IMPORTANCE_MAX // ← Mức ưu tiên cao nhất
             ).apply {
                 description = "Thông báo về bản cập nhật mới nhất của TXA Hub"
                 enableVibration(true)
@@ -62,7 +62,7 @@ class NotificationHelper(private val context: Context) {
                 setShowBadge(true)
                 // Cho phép hiển thị ngay cả khi bật "Không làm phiền" (Android 7.0+)
                 if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                    setBypassDnd(true)
+                    setBypassDnd(true) // Bypass Do Not Disturb
                 }
                 // Đặt sound cho notification từ settings
                 // Ưu tiên dùng MediaStore URI nếu có (để hiển thị đúng tên trong Settings)
@@ -76,20 +76,16 @@ class NotificationHelper(private val context: Context) {
                 }
             }
             
-            // Channel cho thông báo chạy nền - MỨC ƯU TIÊN CAO NHẤT
+            // Channel cho thông báo chạy nền
             val backgroundChannel = NotificationChannel(
                 CHANNEL_ID_BACKGROUND,
                 CHANNEL_NAME_BACKGROUND,
-                NotificationManager.IMPORTANCE_MAX // Mức ưu tiên cao nhất
+                NotificationManager.IMPORTANCE_LOW // ← Độ ưu tiên thấp, không làm phiền user
             ).apply {
                 description = "Thông báo ứng dụng đang chạy nền, cái này khuyến nghị không nên tắt"
-                enableVibration(true)
-                enableLights(true)
-                setShowBadge(true)
-                // Cho phép hiển thị ngay cả khi bật "Không làm phiền" (Android 7.0+)
-                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                    setBypassDnd(true) // Bypass Do Not Disturb
-                }
+                enableVibration(false)
+                enableLights(false)
+                setShowBadge(false)
                 // Đặt sound cho background channel từ settings
                 // Ưu tiên dùng MediaStore URI nếu có (để hiển thị đúng tên trong Settings)
                 val soundUri = soundManager.getDefaultAppSoundMediaStoreUri() 
@@ -176,7 +172,7 @@ class NotificationHelper(private val context: Context) {
             .setContentTitle(title)
             .setContentText(message)
             .setStyle(NotificationCompat.BigTextStyle().bigText(message))
-            // Luôn set priority MAX để hiển thị ngay cả khi bật "Không làm phiền"
+            // ← MỨC ƯU TIÊN CAO NHẤT: Hiển thị ngay cả khi bật "Không làm phiền"
             .setPriority(NotificationCompat.PRIORITY_MAX)
             .setAutoCancel(true)
             .setOngoing(forceUpdate) // Không thể xóa nếu là force update
@@ -187,7 +183,9 @@ class NotificationHelper(private val context: Context) {
             .setDefaults(NotificationCompat.DEFAULT_VIBRATE or NotificationCompat.DEFAULT_LIGHTS)
             .setCategory(NotificationCompat.CATEGORY_STATUS) // Cho phép customize trong settings
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC) // Hiển thị trên lock screen
-            .setFullScreenIntent(downloadPendingIntent, forceUpdate) // Full screen intent cho force update
+            // ← Full screen intent: Hiển thị ngay cả khi màn hình khóa (cho cả force và optional update)
+            .setFullScreenIntent(downloadPendingIntent, true) // Luôn hiển thị full screen để đảm bảo user thấy
+            .setWhen(System.currentTimeMillis()) // Hiển thị thời gian để nổi bật hơn
         
         // Thêm actions tùy theo loại update
         if (forceUpdate) {
@@ -244,14 +242,33 @@ class NotificationHelper(private val context: Context) {
         
         // Đọc thông báo bằng TTS nếu được bật
         val ttsManager = NotificationTTSManager(context)
+        android.util.Log.d("NotificationHelper", "TTS enabled: ${ttsManager.isTTSEnabled()}")
+        
         if (ttsManager.isTTSEnabled()) {
+            android.util.Log.d("NotificationHelper", "Initializing TTS for update notification...")
             // Khởi tạo TTS nếu chưa được khởi tạo
             ttsManager.initialize { success ->
+                android.util.Log.d("NotificationHelper", "TTS initialization callback: success=$success, available=${ttsManager.isAvailable()}")
                 if (success && ttsManager.isAvailable()) {
                     val textToRead = "$title. $message"
+                    android.util.Log.d("NotificationHelper", "TTS speaking: $textToRead")
                     ttsManager.speakNotification(textToRead, "update_notification_${System.currentTimeMillis()}")
+                } else {
+                    android.util.Log.w("NotificationHelper", "TTS not available: success=$success, available=${ttsManager.isAvailable()}")
+                    // Retry sau 500ms nếu TTS chưa sẵn sàng
+                    android.os.Handler(android.os.Looper.getMainLooper()).postDelayed({
+                        if (ttsManager.isAvailable()) {
+                            val textToRead = "$title. $message"
+                            android.util.Log.d("NotificationHelper", "TTS retry speaking: $textToRead")
+                            ttsManager.speakNotification(textToRead, "update_notification_retry_${System.currentTimeMillis()}")
+                        } else {
+                            android.util.Log.e("NotificationHelper", "TTS still not available after retry")
+                        }
+                    }, 500)
                 }
             }
+        } else {
+            android.util.Log.d("NotificationHelper", "TTS is disabled, skipping speech")
         }
     }
     
@@ -297,7 +314,8 @@ class NotificationHelper(private val context: Context) {
             if (existingUpdateChannel != null) {
                 try {
                     // Lưu lại các settings quan trọng trước khi xóa
-                    val importance = existingUpdateChannel.importance
+                    // Luôn dùng IMPORTANCE_MAX để đảm bảo ưu tiên cao nhất
+                    val importance = NotificationManager.IMPORTANCE_MAX
                     val bypassDnd = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
                         existingUpdateChannel.canBypassDnd()
                     } else {
@@ -322,11 +340,11 @@ class NotificationHelper(private val context: Context) {
                     if (!canDeleteUpdateChannel) {
                         android.util.Log.d("NotificationHelper", "Skipping UPDATE channel update (channel in use)")
                     } else {
-                        // Tạo channel mới với sound mới
+                        // Tạo channel mới với sound mới - MỨC ƯU TIÊN CAO NHẤT
                         val newUpdateChannel = NotificationChannel(
                             CHANNEL_ID_UPDATE,
                             CHANNEL_NAME_UPDATE,
-                            importance
+                            NotificationManager.IMPORTANCE_MAX // ← Luôn dùng mức cao nhất
                         ).apply {
                             description = "Thông báo về bản cập nhật mới nhất của TXA Hub"
                             enableVibration(vibrationEnabled)
@@ -334,7 +352,7 @@ class NotificationHelper(private val context: Context) {
                             setShowBadge(showBadge)
                             // Cho phép hiển thị ngay cả khi bật "Không làm phiền" (Android 7.0+)
                             if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                                setBypassDnd(bypassDnd)
+                                setBypassDnd(true) // Luôn bypass DND
                             }
                             // Đặt sound mới
                             setSound(soundUri, null)

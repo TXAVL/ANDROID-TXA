@@ -270,7 +270,15 @@ class SettingsActivity : AppCompatActivity() {
         lifecycleScope.launch {
             preferencesManager.saveLanguage(selectedLanguage)
             currentLanguage = selectedLanguage
-            recreate()
+            
+            // Restart toàn bộ app để áp dụng locale mới cho tất cả activity
+            // Sử dụng MainActivity làm entry point, sau đó tự động mở SettingsActivity
+            val intent = Intent(this@SettingsActivity, MainActivity::class.java).apply {
+                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+                putExtra("open_settings", true) // Flag để MainActivity tự động mở Settings
+            }
+            startActivity(intent)
+            finishAffinity() // Đóng tất cả activity cũ
         }
     }
     

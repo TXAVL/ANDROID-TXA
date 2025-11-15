@@ -2,6 +2,8 @@ package com.txahub.app.ui
 
 import android.content.Intent
 import android.os.Bundle
+import android.os.Handler
+import android.os.Looper
 import android.view.Menu
 import android.view.MenuItem
 import android.widget.Toast
@@ -48,6 +50,14 @@ class MainActivity : AppCompatActivity() {
         setupNavigationDrawer()
         loadDashboard()
         checkAndShowChangelog()
+        
+        // Kiểm tra xem có cần tự động mở Settings không (sau khi đổi ngôn ngữ)
+        if (intent.getBooleanExtra("open_settings", false)) {
+            // Delay một chút để MainActivity render xong
+            Handler(Looper.getMainLooper()).postDelayed({
+                startActivity(Intent(this, SettingsActivity::class.java))
+            }, 300)
+        }
     }
     
     private fun setupUI() {

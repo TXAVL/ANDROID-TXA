@@ -8,17 +8,17 @@ import retrofit2.http.POST
 
 interface PasskeyApiService {
     
-    @POST("passkey-api/create_challenge")
+    @POST("passkey-api/create-challenge")
     suspend fun createChallenge(
         @Body request: PasskeyModels.CreateChallengeRequest
     ): Response<ApiResponse<PasskeyModels.CreateChallengeResponse>>
     
-    @POST("passkey-api/verify_registration")
+    @POST("passkey-api/verify-registration")
     suspend fun verifyRegistration(
         @Body request: PasskeyModels.VerifyRegistrationRequest
     ): Response<ApiResponse<PasskeyModels.VerifyRegistrationResponse>>
     
-    @POST("passkey-api/verify_authentication")
+    @POST("passkey-api/verify-authentication")
     suspend fun verifyAuthentication(
         @Body request: PasskeyModels.VerifyAuthenticationRequest
     ): Response<ApiResponse<PasskeyModels.VerifyAuthenticationResponse>>

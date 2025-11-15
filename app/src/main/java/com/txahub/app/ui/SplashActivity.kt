@@ -223,8 +223,14 @@ class SplashActivity : AppCompatActivity() {
     }
     
     private fun checkPermissionsAndProceed() {
-        // Luôn hiển thị dialog quyền (không check missingPermissions trước)
-        if (!hasShownPermissions) {
+        // Kiểm tra xem tất cả quyền đã được cấp chưa
+        if (permissionManager.areAllPermissionsGranted()) {
+            // Tất cả quyền đã được cấp, không cần show dialog, chuyển thẳng đến bước tiếp theo
+            hasShownPermissions = true
+            splashTimeoutHandler?.removeCallbacksAndMessages(null)
+            checkChangelogAndProceed()
+        } else if (!hasShownPermissions) {
+            // Chưa cấp đủ quyền và chưa show dialog, hiển thị dialog
             hasShownPermissions = true
             permissionDialog = PermissionRequestDialog(this)
             permissionDialog?.show { allGranted ->

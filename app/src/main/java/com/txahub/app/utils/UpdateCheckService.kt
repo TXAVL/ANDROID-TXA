@@ -297,13 +297,12 @@ class UpdateCheckService : Service() {
         val notificationBuilder = NotificationCompat.Builder(this, CHANNEL_ID_BACKGROUND)
             .setSmallIcon(android.R.drawable.ic_menu_info_details)
             .setContentIntent(openAppPendingIntent)
-            .setOngoing(true) // Không thể xóa bằng swipe
-            .setAutoCancel(false)
-            .setPriority(NotificationCompat.PRIORITY_MAX) // Mức ưu tiên cao nhất
+            .setOngoing(true) // ← QUAN TRỌNG: Ghim notification, không thể xóa
+            .setAutoCancel(false) // ← Không tự động đóng
+            .setPriority(NotificationCompat.PRIORITY_LOW) // Độ ưu tiên thấp, không làm phiền user
             .setShowWhen(false)
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
-            .setFullScreenIntent(openAppPendingIntent, false) // Cho phép hiển thị ngay cả khi DND
         
         if (hideNotification) {
             // Notification tối thiểu khi người dùng đã chọn ẩn
@@ -381,17 +380,13 @@ class UpdateCheckService : Service() {
                 val channel = NotificationChannel(
                     CHANNEL_ID_BACKGROUND,
                     CHANNEL_NAME_BACKGROUND,
-                    NotificationManager.IMPORTANCE_MAX // Mức ưu tiên cao nhất
+                    NotificationManager.IMPORTANCE_LOW // ← Độ ưu tiên thấp, không làm phiền user
                 ).apply {
-                    description = "Thông báo ứng dụng đang chạy nền"
-                    enableVibration(true)
-                    enableLights(true)
-                    setShowBadge(true)
-                    // Cho phép hiển thị ngay cả khi bật "Không làm phiền" (Android 7.0+)
-                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                        setBypassDnd(true) // Bypass Do Not Disturb
-                    }
-                    // Đặt sound từ settings
+                    description = "Thông báo ứng dụng đang chạy nền, cái này khuyến nghị không nên tắt"
+                    enableVibration(false)
+                    enableLights(false)
+                    setShowBadge(false)
+                    // Đặt sound từ settings (có thể được tùy chỉnh từ Settings)
                     setSound(soundUri, null)
                 }
                 notificationManager.createNotificationChannel(channel)
