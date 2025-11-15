@@ -71,7 +71,11 @@ class UpdateCheckService : Service() {
     private val checkRunnable = object : Runnable {
         override fun run() {
             // Log khi bắt đầu check
-            logWriter.writeUpdateCheckLog("Starting update check...", "DEBUG")
+            val currentVersion = updateChecker.getCurrentVersion()
+            val currentVersionCode = updateChecker.getCurrentVersionCode()
+            val logMsg = "=== Starting update check ===\nCurrent version: $currentVersion (code: $currentVersionCode)\nLast notified: $lastNotifiedVersion\nLast notification time: $lastNotificationTime"
+            android.util.Log.d("UpdateCheckService", logMsg)
+            logWriter.writeUpdateCheckLog(logMsg, "DEBUG")
             
             // Kiểm tra cập nhật
             updateChecker.checkUpdate { updateInfo ->
@@ -87,24 +91,25 @@ class UpdateCheckService : Service() {
                         // Notification vẫn gửi bình thường bất kể user có bỏ qua hay không
                         
                         val currentTime = System.currentTimeMillis()
+                        val timeSinceLastNotification = currentTime - lastNotificationTime
                         val shouldNotify = when {
-                            // Nếu là version mới chưa từng thông báo
+                            // Nếu là version mới chưa từng thông báo -> thông báo ngay
                             lastNotifiedVersion != updateInfo.versionName -> {
                                 val msg = "Should notify: New version ${updateInfo.versionName} (last: $lastNotifiedVersion)"
                                 android.util.Log.d("UpdateCheckService", msg)
                                 logWriter.writeUpdateCheckLog(msg, "INFO")
                                 true
                             }
-                            // Nếu đã thông báo version này rồi, nhưng đã qua 5 phút
-                            currentTime - lastNotificationTime >= notificationInterval -> {
-                                val msg = "Should notify: Time interval passed (${(currentTime - lastNotificationTime) / 1000}s)"
+                            // Nếu đã thông báo version này rồi, nhưng đã qua 5 phút -> thông báo lại
+                            timeSinceLastNotification >= notificationInterval -> {
+                                val msg = "Should notify: Time interval passed (${timeSinceLastNotification / 1000}s >= ${notificationInterval / 1000}s)"
                                 android.util.Log.d("UpdateCheckService", msg)
                                 logWriter.writeUpdateCheckLog(msg, "INFO")
                                 true
                             }
-                            // Còn lại thì không thông báo
+                            // Còn lại thì không thông báo (đã thông báo gần đây)
                             else -> {
-                                val msg = "Should NOT notify: Same version, time not passed yet"
+                                val msg = "Should NOT notify: Same version (${updateInfo.versionName}), time not passed yet (${timeSinceLastNotification / 1000}s < ${notificationInterval / 1000}s)"
                                 android.util.Log.d("UpdateCheckService", msg)
                                 logWriter.writeUpdateCheckLog(msg, "DEBUG")
                                 false
@@ -117,6 +122,16 @@ class UpdateCheckService : Service() {
                             val permMsg = "Has notification permission: $hasPermission, forceUpdate: ${updateInfo.forceUpdate}"
                             android.util.Log.d("UpdateCheckService", permMsg)
                             logWriter.writeUpdateCheckLog(permMsg, "INFO")
+                            
+                            // Log chi tiết về notification
+                            val detailMsg = "=== Preparing to send notification ===\n" +
+                                    "Version: ${updateInfo.versionName}\n" +
+                                    "Version Code: ${updateInfo.versionCode}\n" +
+                                    "Force Update: ${updateInfo.forceUpdate}\n" +
+                                    "Download URL: ${updateInfo.downloadUrl}\n" +
+                                    "Has Permission: $hasPermission"
+                            android.util.Log.d("UpdateCheckService", detailMsg)
+                            logWriter.writeUpdateCheckLog(detailMsg, "INFO")
                             
                             if (hasPermission) {
                                 try {
@@ -154,7 +169,9 @@ class UpdateCheckService : Service() {
                         }
                     } else {
                         // Không có update, reset thông báo để lần sau có update mới sẽ thông báo ngay
-                        val msg = "No update available, resetting notification state"
+                        val currentVersion = updateChecker.getCurrentVersion()
+                        val currentVersionCode = updateChecker.getCurrentVersionCode()
+                        val msg = "No update available\nCurrent version: $currentVersion (code: $currentVersionCode)\nResetting notification state"
                         android.util.Log.d("UpdateCheckService", msg)
                         logWriter.writeUpdateCheckLog(msg, "DEBUG")
                         lastNotifiedVersion = ""
@@ -240,6 +257,11 @@ class UpdateCheckService : Service() {
     }
     
     override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+        // Log service start
+        val startMsg = "=== UpdateCheckService started ===\nAction: ${intent?.action}\nFlags: $flags\nStartId: $startId"
+        android.util.Log.d("UpdateCheckService", startMsg)
+        logWriter.writeUpdateCheckLog(startMsg, "INFO")
+        
         // Xử lý action ẩn thông báo
         if (intent?.action == ACTION_HIDE_NOTIFICATION) {
             prefs.edit().putBoolean("hide_background_notification", true).apply()
@@ -253,6 +275,10 @@ class UpdateCheckService : Service() {
         lastNotifiedVersion = prefs.getString("last_notified_version", "") ?: ""
         lastNotificationTime = prefs.getLong("last_notification_time", 0)
         
+        val stateMsg = "Service state:\nLast notified version: $lastNotifiedVersion\nLast notification time: $lastNotificationTime"
+        android.util.Log.d("UpdateCheckService", stateMsg)
+        logWriter.writeUpdateCheckLog(stateMsg, "DEBUG")
+        
         // Kiểm tra xem có ẩn thông báo background không
         val hideNotification = prefs.getBoolean("hide_background_notification", false)
         
@@ -265,6 +291,10 @@ class UpdateCheckService : Service() {
         
         // Bắt đầu kiểm tra notification định kỳ (tự động hiện lại nếu bị xóa)
         handler.post(notificationCheckRunnable)
+        
+        val scheduleMsg = "Scheduled update check (interval: ${checkInterval}ms) and notification check (interval: ${notificationCheckInterval}ms)"
+        android.util.Log.d("UpdateCheckService", scheduleMsg)
+        logWriter.writeUpdateCheckLog(scheduleMsg, "INFO")
         
         return START_STICKY
     }

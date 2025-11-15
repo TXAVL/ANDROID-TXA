@@ -134,12 +134,8 @@ class MainActivity : AppCompatActivity() {
                 true
             }
             R.id.nav_logs -> {
-                if (isLoggedIn) {
-                    startActivity(Intent(this, LogViewerActivity::class.java))
-                } else {
-                    // Chưa login: chuyển đến LoginActivity
-                    startActivity(Intent(this, LoginActivity::class.java))
-                }
+                // Logs có thể xem mà không cần login
+                startActivity(Intent(this, LogViewerActivity::class.java))
                 true
             }
             R.id.nav_changelog -> {

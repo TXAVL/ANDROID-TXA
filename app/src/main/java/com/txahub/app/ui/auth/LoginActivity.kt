@@ -134,6 +134,11 @@ class LoginActivity : AppCompatActivity() {
                 // Đã ở màn hình login, không cần làm gì
                 true
             }
+            R.id.nav_logs -> {
+                // Chưa login: vẫn cho xem logs (không cần login để xem logs)
+                startActivity(Intent(this, com.txahub.app.ui.LogViewerActivity::class.java))
+                true
+            }
             R.id.nav_changelog -> {
                 startActivity(Intent(this, ChangelogActivity::class.java))
                 true

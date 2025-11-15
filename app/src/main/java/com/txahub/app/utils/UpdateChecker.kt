@@ -262,14 +262,22 @@ class UpdateChecker(private val context: Context) {
                     // Chỉ cần version code lớn hơn là đủ (đơn giản và chính xác hơn)
                     val isCodeNewer = updateInfo.versionCode > currentVersionCode
                     
-                    // Báo update khi version code lớn hơn
-                    if (isCodeNewer) {
-                        val logMsg = "Update available: ${updateInfo.versionName} (code: ${updateInfo.versionCode}) > current (code: $currentVersionCode)"
+                    // Nếu version code bằng nhau nhưng có force_update = true, vẫn báo update (để test hoặc force update)
+                    val shouldNotify = isCodeNewer || (updateInfo.versionCode == currentVersionCode && updateInfo.forceUpdate)
+                    
+                    // Báo update khi version code lớn hơn hoặc bằng nhau nhưng có force_update
+                    if (shouldNotify) {
+                        val reason = if (isCodeNewer) {
+                            "version code lớn hơn"
+                        } else {
+                            "version code bằng nhau nhưng có force_update = true"
+                        }
+                        val logMsg = "Update available: ${updateInfo.versionName} (code: ${updateInfo.versionCode}) vs current (code: $currentVersionCode) - Reason: $reason"
                         logWriter.writeAppLog(logMsg, "UpdateChecker", Log.INFO)
                         callback(updateInfo)
                         onComplete(true)
                     } else {
-                        val logMsg = "No update: ${updateInfo.versionName} (code: ${updateInfo.versionCode}) <= current (code: $currentVersionCode)"
+                        val logMsg = "No update: ${updateInfo.versionName} (code: ${updateInfo.versionCode}) <= current (code: $currentVersionCode) and force_update = ${updateInfo.forceUpdate}"
                         logWriter.writeAppLog(logMsg, "UpdateChecker", Log.DEBUG)
                         callback(null) // Không có bản cập nhật
                         onComplete(true)
