@@ -169,9 +169,9 @@ class UpdateCheckService : Service() {
                         }
                     } else {
                         // Không có update, reset thông báo để lần sau có update mới sẽ thông báo ngay
-                        val currentVersion = updateChecker.getCurrentVersion()
-                        val currentVersionCode = updateChecker.getCurrentVersionCode()
-                        val msg = "No update available\nCurrent version: $currentVersion (code: $currentVersionCode)\nResetting notification state"
+                        val currentVer = updateChecker.getCurrentVersion()
+                        val currentCode = updateChecker.getCurrentVersionCode()
+                        val msg = "No update available\nCurrent version: $currentVer (code: $currentCode)\nResetting notification state"
                         android.util.Log.d("UpdateCheckService", msg)
                         logWriter.writeUpdateCheckLog(msg, "DEBUG")
                         lastNotifiedVersion = ""
