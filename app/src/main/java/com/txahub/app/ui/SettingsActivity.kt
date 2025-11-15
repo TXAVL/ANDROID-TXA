@@ -318,7 +318,8 @@ class SettingsActivity : AppCompatActivity() {
                             put("user", JSONObject().apply {
                                 put("id", user.id)
                                 put("name", user.name)
-                                put("displayName", user.displayName ?: user.name)
+                                // displayName là non-nullable String, dùng trực tiếp
+                                put("displayName", user.displayName)
                                 user.icon?.let { put("icon", it) }
                             })
                         }

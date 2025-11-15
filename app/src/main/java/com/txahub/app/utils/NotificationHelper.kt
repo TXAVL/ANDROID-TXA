@@ -315,12 +315,6 @@ class NotificationHelper(private val context: Context) {
                 try {
                     // Lưu lại các settings quan trọng trước khi xóa
                     // Luôn dùng IMPORTANCE_MAX để đảm bảo ưu tiên cao nhất
-                    val importance = NotificationManager.IMPORTANCE_MAX
-                    val bypassDnd = if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
-                        existingUpdateChannel.canBypassDnd()
-                    } else {
-                        false
-                    }
                     val vibrationEnabled = existingUpdateChannel.shouldVibrate()
                     val lightsEnabled = existingUpdateChannel.shouldShowLights()
                     val showBadge = existingUpdateChannel.canShowBadge()

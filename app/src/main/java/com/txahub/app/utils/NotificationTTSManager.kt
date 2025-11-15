@@ -134,6 +134,8 @@ class NotificationTTSManager(private val context: Context) {
                 Log.d("NotificationTTSManager", "TTS speak result: $result")
                 if (result == TextToSpeech.ERROR) {
                     Log.e("NotificationTTSManager", "TTS speak returned ERROR")
+                } else {
+                    // Success case - no action needed
                 }
             } else {
                 @Suppress("DEPRECATION")
