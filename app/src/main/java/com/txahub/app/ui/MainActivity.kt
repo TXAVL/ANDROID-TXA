@@ -140,20 +140,23 @@ class MainActivity : AppCompatActivity() {
             
             binding.progressBar.visibility = android.view.View.GONE
             
-            result.onSuccess { stats ->
-                binding.tvTotalClicks.text = stats.totalClicks.toString()
-                binding.tvTotalLinks.text = stats.totalLinks.toString()
-                binding.tvTotalProjects.text = stats.totalProjects.toString()
-                binding.tvClicksToday.text = getString(R.string.txa_global_clicks_today_format, getString(R.string.txa_global_clicks_today), stats.clicksToday)
-                binding.tvClicksWeek.text = getString(R.string.txa_global_clicks_week_format, getString(R.string.txa_global_clicks_week), stats.clicksThisWeek)
-                binding.tvClicksMonth.text = getString(R.string.txa_global_clicks_month_format, getString(R.string.txa_global_clicks_month), stats.clicksThisMonth)
-            }.onFailure { error ->
-                Toast.makeText(
-                    this@MainActivity,
-                    error.message ?: getString(R.string.txa_global_error_statistics_failed),
-                    Toast.LENGTH_LONG
-                ).show()
-            }
+            result.fold(
+                onSuccess = { stats ->
+                    binding.tvTotalClicks.text = stats.totalClicks.toString()
+                    binding.tvTotalLinks.text = stats.totalLinks.toString()
+                    binding.tvTotalProjects.text = stats.totalProjects.toString()
+                    binding.tvClicksToday.text = getString(R.string.txa_global_clicks_today_format, getString(R.string.txa_global_clicks_today), stats.clicksToday)
+                    binding.tvClicksWeek.text = getString(R.string.txa_global_clicks_week_format, getString(R.string.txa_global_clicks_week), stats.clicksThisWeek)
+                    binding.tvClicksMonth.text = getString(R.string.txa_global_clicks_month_format, getString(R.string.txa_global_clicks_month), stats.clicksThisMonth)
+                },
+                onFailure = { error ->
+                    Toast.makeText(
+                        this@MainActivity,
+                        error.message ?: getString(R.string.txa_global_error_statistics_failed),
+                        Toast.LENGTH_LONG
+                    ).show()
+                }
+            )
         }
     }
     

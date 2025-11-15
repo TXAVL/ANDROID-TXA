@@ -26,18 +26,52 @@ class SplashActivity : AppCompatActivity() {
     
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        setContentView(R.layout.activity_splash)
         
-        preferencesManager = PreferencesManager(this)
-        permissionManager = PermissionManager(this)
-        
-        // Xử lý deeplink nếu có
-        val handledDeepLink = handleDeepLink(intent)
-        
-        // Nếu đã xử lý deeplink, không cần chạy các bước tiếp theo
-        if (!handledDeepLink) {
-            // Kiểm tra quyền trước
-            checkPermissionsAndProceed()
+        try {
+            setContentView(R.layout.activity_splash)
+            
+            preferencesManager = PreferencesManager(this)
+            permissionManager = PermissionManager(this)
+            
+            // Xử lý deeplink nếu có
+            val handledDeepLink = handleDeepLink(intent)
+            
+            // Nếu đã xử lý deeplink, không cần chạy các bước tiếp theo
+            if (!handledDeepLink) {
+                // Kiểm tra quyền trước
+                checkPermissionsAndProceed()
+            }
+        } catch (e: Exception) {
+            android.util.Log.e("SplashActivity", "Error in onCreate", e)
+            // Nếu có lỗi, vẫn cố gắng chuyển đến màn hình tiếp theo
+            try {
+                val prefsManager = try {
+                    PreferencesManager(this)
+                } catch (e2: Exception) {
+                    android.util.Log.e("SplashActivity", "Error creating PreferencesManager", e2)
+                    null
+                }
+                
+                CoroutineScope(Dispatchers.Main).launch {
+                    val token = prefsManager?.getAuthTokenSync()
+                    if (!token.isNullOrEmpty()) {
+                        ApiClient.setAuthToken(token)
+                        startActivity(Intent(this@SplashActivity, MainActivity::class.java))
+                    } else {
+                        startActivity(Intent(this@SplashActivity, LoginActivity::class.java))
+                    }
+                    finish()
+                }
+            } catch (e2: Exception) {
+                android.util.Log.e("SplashActivity", "Error in fallback navigation", e2)
+                // Cuối cùng, nếu vẫn lỗi, chuyển đến LoginActivity
+                try {
+                    startActivity(Intent(this, LoginActivity::class.java))
+                    finish()
+                } catch (e3: Exception) {
+                    android.util.Log.e("SplashActivity", "Critical error - cannot navigate", e3)
+                }
+            }
         }
     }
     

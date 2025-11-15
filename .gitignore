@@ -2,6 +2,7 @@
 *.apk
 *.ap_
 *.aab
+*.keystore
 # But allow APK files in releases folder
 !releases/*.apk
 
