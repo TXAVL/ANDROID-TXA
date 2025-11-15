@@ -67,13 +67,26 @@ class ChangelogDialog(context: Context) : Dialog(context) {
         
         // Setup OK button
         btnOk.setOnClickListener {
+            // Đánh dấu đã bấm OK để cho phép dismiss
+            isOkClicked = true
             dismiss()
         }
         
-        // Set cancelable
-        setCancelable(true)
-        setCanceledOnTouchOutside(true)
+        // KHÔNG cho phép đóng bằng cách bấm ra ngoài hoặc nút back
+        // Chỉ cho phép đóng khi bấm nút OK
+        setCancelable(false)
+        setCanceledOnTouchOutside(false)
+        
+        // Ngăn chặn dismiss bằng cách khác (trừ khi bấm OK)
+        setOnCancelListener {
+            // Nếu không phải bấm OK, không cho phép cancel
+            if (!isOkClicked) {
+                // Không làm gì cả, giữ dialog mở
+            }
+        }
     }
+    
+    private var isOkClicked = false
     
     private fun loadChangelog() {
         progressBar.visibility = View.VISIBLE
@@ -156,8 +169,14 @@ class ChangelogDialog(context: Context) : Dialog(context) {
     }
     
     override fun dismiss() {
-        super.dismiss()
-        onDismissListener?.invoke()
+        // Chỉ gọi onDismissListener nếu đã bấm OK
+        if (isOkClicked) {
+            super.dismiss()
+            onDismissListener?.invoke()
+        } else {
+            // Nếu không phải bấm OK, không dismiss
+            // (Nhưng thực ra với setCancelable(false), điều này không nên xảy ra)
+        }
     }
 }
 

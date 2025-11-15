@@ -83,6 +83,9 @@ class UpdateCheckService : Service() {
                         android.util.Log.d("UpdateCheckService", logMessage)
                         logWriter.writeUpdateCheckLog(logMessage, "INFO")
                         
+                        // Lưu ý: "Bỏ qua" chỉ ảnh hưởng đến changelog modal, KHÔNG ảnh hưởng đến notification
+                        // Notification vẫn gửi bình thường bất kể user có bỏ qua hay không
+                        
                         val currentTime = System.currentTimeMillis()
                         val shouldNotify = when {
                             // Nếu là version mới chưa từng thông báo
@@ -296,10 +299,11 @@ class UpdateCheckService : Service() {
             .setContentIntent(openAppPendingIntent)
             .setOngoing(true) // Không thể xóa bằng swipe
             .setAutoCancel(false)
-            .setPriority(NotificationCompat.PRIORITY_LOW)
+            .setPriority(NotificationCompat.PRIORITY_MAX) // Mức ưu tiên cao nhất
             .setShowWhen(false)
             .setCategory(NotificationCompat.CATEGORY_SERVICE)
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC)
+            .setFullScreenIntent(openAppPendingIntent, false) // Cho phép hiển thị ngay cả khi DND
         
         if (hideNotification) {
             // Notification tối thiểu khi người dùng đã chọn ẩn
@@ -377,12 +381,16 @@ class UpdateCheckService : Service() {
                 val channel = NotificationChannel(
                     CHANNEL_ID_BACKGROUND,
                     CHANNEL_NAME_BACKGROUND,
-                    NotificationManager.IMPORTANCE_LOW
+                    NotificationManager.IMPORTANCE_MAX // Mức ưu tiên cao nhất
                 ).apply {
                     description = "Thông báo ứng dụng đang chạy nền"
-                    enableVibration(false)
-                    enableLights(false)
-                    setShowBadge(false)
+                    enableVibration(true)
+                    enableLights(true)
+                    setShowBadge(true)
+                    // Cho phép hiển thị ngay cả khi bật "Không làm phiền" (Android 7.0+)
+                    if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                        setBypassDnd(true) // Bypass Do Not Disturb
+                    }
                     // Đặt sound từ settings
                     setSound(soundUri, null)
                 }

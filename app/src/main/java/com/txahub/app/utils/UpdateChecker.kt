@@ -252,16 +252,25 @@ class UpdateChecker(private val context: Context) {
                     val currentVersion = getCurrentVersion()
                     val currentVersionCode = getCurrentVersionCode()
                     
-                    // Chỉ báo update khi CẢ HAI version name VÀ version code đều lớn hơn
-                    val isVersionNewer = isNewerVersion(updateInfo.versionName, currentVersion)
+                    // Log để debug
+                    logWriter.writeAppLog(
+                        "Checking update: currentVersion=$currentVersion, currentCode=$currentVersionCode, newVersion=${updateInfo.versionName}, newCode=${updateInfo.versionCode}",
+                        "UpdateChecker",
+                        Log.DEBUG
+                    )
+                    
+                    // Chỉ cần version code lớn hơn là đủ (đơn giản và chính xác hơn)
                     val isCodeNewer = updateInfo.versionCode > currentVersionCode
                     
-                    // Chỉ báo update khi cả version name VÀ version code đều lớn hơn
-                    // Nếu bằng hoặc nhỏ hơn thì không báo
-                    if (isVersionNewer && isCodeNewer) {
+                    // Báo update khi version code lớn hơn
+                    if (isCodeNewer) {
+                        val logMsg = "Update available: ${updateInfo.versionName} (code: ${updateInfo.versionCode}) > current (code: $currentVersionCode)"
+                        logWriter.writeAppLog(logMsg, "UpdateChecker", Log.INFO)
                         callback(updateInfo)
                         onComplete(true)
                     } else {
+                        val logMsg = "No update: ${updateInfo.versionName} (code: ${updateInfo.versionCode}) <= current (code: $currentVersionCode)"
+                        logWriter.writeAppLog(logMsg, "UpdateChecker", Log.DEBUG)
                         callback(null) // Không có bản cập nhật
                         onComplete(true)
                     }

@@ -6,6 +6,12 @@ import android.widget.Toast
 import androidx.appcompat.app.AlertDialog
 import com.txahub.app.R
 
+/**
+ * Dialog yêu cầu quyền mới - được thiết kế lại từ đầu
+ * - Hiển thị tất cả quyền (đã cấp hoặc chưa)
+ * - Chỉ cho phép đóng khi tất cả quyền đã được cấp
+ * - Tự động refresh khi quay lại từ Settings
+ */
 class PermissionRequestDialog(private val activity: Activity) {
     
     private val permissionManager = PermissionManager(activity)
@@ -26,7 +32,7 @@ class PermissionRequestDialog(private val activity: Activity) {
         // Tạo dialog
         val dialogView = activity.layoutInflater.inflate(R.layout.dialog_permission_request, null)
         dialog = AlertDialog.Builder(activity)
-            .setTitle(R.string.txa_global_permissions_required)
+            .setTitle(R.string.txa_global.permissions_required)
             .setView(dialogView)
             .setCancelable(false) // Không cho phép đóng bằng cách bấm ra ngoài hoặc nút back
             .create()
@@ -36,7 +42,7 @@ class PermissionRequestDialog(private val activity: Activity) {
         btnClose = dialogView.findViewById<android.widget.Button>(R.id.btnContinue)
         
         // Đổi text nút thành "Đóng"
-        btnClose?.text = activity.getString(R.string.txa_global_close)
+        btnClose?.text = activity.getString(R.string.txa_global.close)
         
         // Xử lý nút Đóng
         btnClose?.setOnClickListener {
@@ -137,16 +143,18 @@ class PermissionRequestDialog(private val activity: Activity) {
             ivCheck.setImageResource(android.R.drawable.checkbox_on_background)
             ivCheck.setColorFilter(activity.getColor(android.R.color.holo_green_dark))
             btnGrant.visibility = android.view.View.GONE
-            tvStatus?.text = activity.getString(R.string.txa_global_permission_granted)
+            tvStatus?.text = activity.getString(R.string.txa_global.permission_granted)
             tvStatus?.setTextColor(activity.getColor(android.R.color.holo_green_dark))
             itemView.alpha = 1f
+            itemView.isClickable = false // Không cho click khi đã cấp
         } else {
             // Quyền chưa cấp: ẩn tích, hiện nút Cấp quyền
             ivCheck.visibility = android.view.View.GONE
             btnGrant.visibility = android.view.View.VISIBLE
-            tvStatus?.text = activity.getString(R.string.txa_global_permission_not_granted)
+            tvStatus?.text = activity.getString(R.string.txa_global.permission_not_granted)
             tvStatus?.setTextColor(activity.getColor(android.R.color.holo_red_dark))
             itemView.alpha = 1f
+            itemView.isClickable = true // Cho phép click khi chưa cấp
         }
     }
     

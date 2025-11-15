@@ -23,6 +23,8 @@ class NotificationHelper(private val context: Context) {
         private const val CHANNEL_ID_BACKGROUND = "txahub_background_channel"
         private const val CHANNEL_NAME_BACKGROUND = "TXA Hub đang chạy nền"
         const val NOTIFICATION_ID_UPDATE = 1001 // Public để UpdateCheckService có thể kiểm tra
+        const val ACTION_SKIP_UPDATE = "com.txahub.app.SKIP_UPDATE" // Action để bỏ qua update
+        const val EXTRA_VERSION_NAME = "version_name" // Extra chứa version name
     }
     
     private val soundManager: NotificationSoundManager by lazy { NotificationSoundManager(context) }
@@ -74,16 +76,20 @@ class NotificationHelper(private val context: Context) {
                 }
             }
             
-            // Channel cho thông báo chạy nền
+            // Channel cho thông báo chạy nền - MỨC ƯU TIÊN CAO NHẤT
             val backgroundChannel = NotificationChannel(
                 CHANNEL_ID_BACKGROUND,
                 CHANNEL_NAME_BACKGROUND,
-                NotificationManager.IMPORTANCE_LOW
+                NotificationManager.IMPORTANCE_MAX // Mức ưu tiên cao nhất
             ).apply {
                 description = "Thông báo ứng dụng đang chạy nền, cái này khuyến nghị không nên tắt"
-                enableVibration(false)
-                enableLights(false)
-                setShowBadge(false)
+                enableVibration(true)
+                enableLights(true)
+                setShowBadge(true)
+                // Cho phép hiển thị ngay cả khi bật "Không làm phiền" (Android 7.0+)
+                if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.N) {
+                    setBypassDnd(true) // Bypass Do Not Disturb
+                }
                 // Đặt sound cho background channel từ settings
                 // Ưu tiên dùng MediaStore URI nếu có (để hiển thị đúng tên trong Settings)
                 val soundUri = soundManager.getDefaultAppSoundMediaStoreUri() 
@@ -193,16 +199,41 @@ class NotificationHelper(private val context: Context) {
             .setCategory(NotificationCompat.CATEGORY_STATUS) // Cho phép customize trong settings
             .setVisibility(NotificationCompat.VISIBILITY_PUBLIC) // Hiển thị trên lock screen
             .setFullScreenIntent(downloadPendingIntent, forceUpdate) // Full screen intent cho force update
-            .addAction(
+        
+        // Thêm actions tùy theo loại update
+        if (forceUpdate) {
+            // Bản cập nhật bắt buộc: chỉ có nút "Tải ngay"
+            notificationBuilder.addAction(
                 android.R.drawable.ic_dialog_info,
                 "Tải ngay",
                 downloadPendingIntent
             )
-            .addAction(
-                android.R.drawable.ic_menu_view,
-                "Mở app",
-                openAppPendingIntent
+        } else {
+            // Bản cập nhật không bắt buộc: có 2 nút "Tải ngay" và "Bỏ qua"
+            // Intent để bỏ qua update
+            val skipIntent = Intent(ACTION_SKIP_UPDATE).apply {
+                putExtra(EXTRA_VERSION_NAME, versionName)
+                setPackage(context.packageName)
+            }
+            val skipPendingIntent = PendingIntent.getBroadcast(
+                context,
+                2,
+                skipIntent,
+                PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
             )
+            
+            notificationBuilder
+                .addAction(
+                    android.R.drawable.ic_dialog_info,
+                    "Tải ngay",
+                    downloadPendingIntent
+                )
+                .addAction(
+                    android.R.drawable.ic_menu_close_clear_cancel,
+                    "Bỏ qua",
+                    skipPendingIntent
+                )
+        }
         
         // Thêm large icon nếu có
         appIconBitmap?.let {

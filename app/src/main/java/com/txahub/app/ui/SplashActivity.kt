@@ -1,5 +1,6 @@
 package com.txahub.app.ui
 
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
 import android.os.Handler
@@ -242,16 +243,26 @@ class SplashActivity : AppCompatActivity() {
         val currentVersion = getCurrentVersion()
         
         lifecycleScope.launch {
+            // Kiểm tra xem version này đã bị bỏ qua chưa (từ notification "Bỏ qua")
+            val prefs = getSharedPreferences("txahub_prefs", Context.MODE_PRIVATE)
+            val skippedVersions = prefs.getStringSet("skipped_versions", mutableSetOf()) ?: mutableSetOf()
+            val isSkipped = skippedVersions.contains(currentVersion)
+            
+            // Kiểm tra xem đã xem changelog cho version này chưa
             val hasViewed = preferencesManager.hasViewedChangelogForVersion(currentVersion)
             
-            if (!hasViewed && !hasShownChangelog) {
-                // Chưa xem changelog cho version này, hiển thị modal dialog
+            // Chỉ hiển thị changelog nếu:
+            // 1. Chưa xem changelog cho version này
+            // 2. Version này chưa bị bỏ qua
+            // 3. Chưa hiển thị changelog trong session này
+            if (!hasViewed && !isSkipped && !hasShownChangelog) {
+                // Chưa xem changelog cho version này và chưa bị bỏ qua, hiển thị modal dialog
                 hasShownChangelog = true
                 runOnUiThread {
                     showChangelogDialog(currentVersion)
                 }
             } else {
-                // Đã xem changelog hoặc đã hiển thị, chuyển màn hình
+                // Đã xem changelog, đã bị bỏ qua, hoặc đã hiển thị, chuyển màn hình
                 proceedToNextScreen()
             }
         }

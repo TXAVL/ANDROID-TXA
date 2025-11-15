@@ -76,6 +76,15 @@
             android:theme="@style/Theme.TXAHub.NoActionBar"
             android:parentActivityName=".ui.MainActivity" />
 
+        <!-- BroadcastReceiver để xử lý action "Bỏ qua" update -->
+        <receiver
+            android:name=".utils.UpdateSkipReceiver"
+            android:exported="false">
+            <intent-filter>
+                <action android:name="com.txahub.app.SKIP_UPDATE" />
+            </intent-filter>
+        </receiver>
+
         <!-- FileProvider for sharing log files -->
         <provider
             android:name="androidx.core.content.FileProvider"
