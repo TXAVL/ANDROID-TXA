@@ -7,6 +7,7 @@ import android.os.Handler
 import android.os.Looper
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
+import androidx.lifecycle.lifecycleScope
 import com.txahub.app.R
 import com.txahub.app.data.local.PreferencesManager
 import com.txahub.app.data.api.ApiClient
@@ -14,8 +15,8 @@ import com.txahub.app.utils.PermissionManager
 import com.txahub.app.utils.PermissionRequestDialog
 import com.txahub.app.utils.UpdateChecker
 import com.txahub.app.utils.ChangelogDialog
+import com.txahub.app.utils.ChangelogActivity
 import com.txahub.app.ui.auth.LoginActivity
-import kotlinx.coroutines.lifecycleScope
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch

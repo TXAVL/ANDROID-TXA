@@ -31,8 +31,9 @@ class PermissionRequestDialog(private val activity: Activity) {
         
         // Tạo dialog
         val dialogView = activity.layoutInflater.inflate(R.layout.dialog_permission_request, null)
+        val titleResId = activity.resources.getIdentifier("txa_global.permissions_required", "string", activity.packageName)
         dialog = AlertDialog.Builder(activity)
-            .setTitle(R.string.txa_global.permissions_required)
+            .setTitle(if (titleResId != 0) titleResId else android.R.string.unknownName)
             .setView(dialogView)
             .setCancelable(false) // Không cho phép đóng bằng cách bấm ra ngoài hoặc nút back
             .create()
@@ -42,7 +43,8 @@ class PermissionRequestDialog(private val activity: Activity) {
         btnClose = dialogView.findViewById<android.widget.Button>(R.id.btnContinue)
         
         // Đổi text nút thành "Đóng"
-        btnClose?.text = activity.getString(R.string.txa_global.close)
+        val closeResId = activity.resources.getIdentifier("txa_global.close", "string", activity.packageName)
+        btnClose?.text = if (closeResId != 0) activity.getString(closeResId) else "Đóng"
         
         // Xử lý nút Đóng
         btnClose?.setOnClickListener {
@@ -96,8 +98,6 @@ class PermissionRequestDialog(private val activity: Activity) {
         val tvPermissionName = itemView.findViewById<android.widget.TextView>(R.id.tvPermissionName)
         val tvPermissionDesc = itemView.findViewById<android.widget.TextView>(R.id.tvPermissionDesc)
         val btnGrant = itemView.findViewById<android.widget.Button>(R.id.btnGrant)
-        val ivCheck = itemView.findViewById<android.widget.ImageView>(R.id.ivCheck)
-        val tvStatus = itemView.findViewById<android.widget.TextView>(R.id.tvStatus)
         
         tvPermissionName.text = permissionInfo.name
         tvPermissionDesc.text = permissionInfo.description
@@ -143,7 +143,8 @@ class PermissionRequestDialog(private val activity: Activity) {
             ivCheck.setImageResource(android.R.drawable.checkbox_on_background)
             ivCheck.setColorFilter(activity.getColor(android.R.color.holo_green_dark))
             btnGrant.visibility = android.view.View.GONE
-            tvStatus?.text = activity.getString(R.string.txa_global.permission_granted)
+            val grantedResId = activity.resources.getIdentifier("txa_global.permission_granted", "string", activity.packageName)
+            tvStatus?.text = if (grantedResId != 0) activity.getString(grantedResId) else "Đã cấp"
             tvStatus?.setTextColor(activity.getColor(android.R.color.holo_green_dark))
             itemView.alpha = 1f
             itemView.isClickable = false // Không cho click khi đã cấp
@@ -151,7 +152,8 @@ class PermissionRequestDialog(private val activity: Activity) {
             // Quyền chưa cấp: ẩn tích, hiện nút Cấp quyền
             ivCheck.visibility = android.view.View.GONE
             btnGrant.visibility = android.view.View.VISIBLE
-            tvStatus?.text = activity.getString(R.string.txa_global.permission_not_granted)
+            val notGrantedResId = activity.resources.getIdentifier("txa_global.permission_not_granted", "string", activity.packageName)
+            tvStatus?.text = if (notGrantedResId != 0) activity.getString(notGrantedResId) else "Chưa cấp"
             tvStatus?.setTextColor(activity.getColor(android.R.color.holo_red_dark))
             itemView.alpha = 1f
             itemView.isClickable = true // Cho phép click khi chưa cấp

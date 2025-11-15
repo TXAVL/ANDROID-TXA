@@ -137,17 +137,6 @@ class NotificationHelper(private val context: Context) {
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
         
-        // Intent để mở app
-        val openAppIntent = Intent(context, MainActivity::class.java).apply {
-            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-        }
-        val openAppPendingIntent = PendingIntent.getActivity(
-            context,
-            1,
-            openAppIntent,
-            PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
-        )
-        
         val title = if (forceUpdate) {
             "Cập nhật bắt buộc - TXA Hub"
         } else {
