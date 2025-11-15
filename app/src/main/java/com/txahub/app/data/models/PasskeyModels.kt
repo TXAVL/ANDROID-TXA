@@ -116,7 +116,7 @@ data class VerifyAuthenticationResponse(
     @SerializedName("message")
     val message: String,
     @SerializedName("data")
-    val data: com.txahub.app.data.models.AuthResponse? = null // Chỉ có khi đăng nhập thành công
+    val data: com.txahub.app.data.models.AuthResponse? = null // Optional: có thể có token nếu server trả về
 )
 }
 

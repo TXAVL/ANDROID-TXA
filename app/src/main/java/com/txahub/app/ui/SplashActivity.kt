@@ -158,7 +158,7 @@ class SplashActivity : AppCompatActivity() {
             // Hiển thị dialog yêu cầu quyền
             hasShownPermissions = true
             val dialog = PermissionRequestDialog(this)
-            dialog.show { allGranted ->
+            dialog.show { _ ->
                 // Sau khi đóng dialog, kiểm tra changelog
                 checkChangelogAndProceed()
             }

@@ -28,6 +28,8 @@ data class User(
     val emailVerifiedAt: String?,
     @SerializedName("is_admin")
     val isAdmin: Boolean = false,
+    @SerializedName("api_key")
+    val apiKey: String? = null, // API key để dùng làm token
     val license: License? = null
 )
 

@@ -171,7 +171,7 @@ class LoginActivity : AppCompatActivity() {
             binding.progressBar.visibility = android.view.View.GONE
             
             result.fold(
-                onSuccess = { authResponse ->
+                onSuccess = { _ ->
                     // Sau khi đăng ký thành công, hiển thị thông báo xác minh email
                     showEmailVerificationRequiredDialog(email)
                 },
@@ -418,27 +418,81 @@ class LoginActivity : AppCompatActivity() {
                 binding.btnPasskeyLogin.isEnabled = true
                 
                 if (response.isSuccessful && response.body()?.success == true) {
-                    val authData = response.body()!!.data
-                    if (authData != null && authData.data != null) {
-                        val authResponse = authData.data!!
-                        // Lưu token và user info
-                        preferencesManager.saveAuthToken(authResponse.token)
+                    // Theo docs, verify_authentication chỉ trả về success và message
+                    // Server tự động tạo session, nhưng có thể trả về token trong data (optional)
+                    val verifyResponse = response.body()
+                    val authData = verifyResponse?.data
+                    
+                    if (authData != null) {
+                        // Nếu có data (token), lưu ngay
+                        preferencesManager.saveAuthToken(authData.token)
                         preferencesManager.saveUserInfo(
-                            authResponse.user.email,
-                            authResponse.user.name,
-                            authResponse.user.id.toString(),
-                            authResponse.user.isAdmin
+                            authData.user.email,
+                            authData.user.name,
+                            authData.user.id.toString(),
+                            authData.user.isAdmin
                         )
-                        ApiClient.setAuthToken(authResponse.token)
+                        ApiClient.setAuthToken(authData.token)
                         
                         // Chuyển đến MainActivity
                         navigateToMain()
                     } else {
-                        Toast.makeText(
-                            this@LoginActivity,
-                            "Đăng nhập thất bại",
-                            Toast.LENGTH_LONG
-                        ).show()
+                        // Theo docs, verify_authentication chỉ trả về success và message
+                        // Server tự động tạo session, nhưng không trả về token trong response
+                        // Cần gọi API /api/user để lấy thông tin user và api_key (dùng làm token)
+                        // Vì server đã tạo session, có thể gọi getUser() mà không cần token
+                        // (hoặc server có thể trả về token trong response nếu có)
+                        try {
+                            // Thử gọi getUser() - server có thể dùng session để xác thực
+                            val userResponse = ApiClient.authApi.getUser()
+                            if (userResponse.isSuccessful && userResponse.body()?.success == true) {
+                                val user = userResponse.body()!!.data
+                                if (user != null) {
+                                    // Lấy api_key từ user để dùng làm token
+                                    val token = user.apiKey
+                                    if (!token.isNullOrEmpty()) {
+                                        preferencesManager.saveAuthToken(token)
+                                        preferencesManager.saveUserInfo(
+                                            user.email,
+                                            user.name,
+                                            user.id.toString(),
+                                            user.isAdmin
+                                        )
+                                        ApiClient.setAuthToken(token)
+                                        
+                                        // Chuyển đến MainActivity
+                                        navigateToMain()
+                                    } else {
+                                        // Nếu không có api_key, hiển thị thông báo
+                                        Toast.makeText(
+                                            this@LoginActivity,
+                                            "Xác thực thành công nhưng không thể lấy token. Vui lòng đăng nhập lại.",
+                                            Toast.LENGTH_LONG
+                                        ).show()
+                                    }
+                                } else {
+                                    Toast.makeText(
+                                        this@LoginActivity,
+                                        "Không thể lấy thông tin user",
+                                        Toast.LENGTH_LONG
+                                    ).show()
+                                }
+                            } else {
+                                // Nếu getUser() fail, có thể cần token để gọi API
+                                // Hiển thị thông báo yêu cầu server trả về token trong response
+                                Toast.makeText(
+                                    this@LoginActivity,
+                                    "Xác thực thành công. Vui lòng đăng nhập lại để lấy token.",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                            }
+                        } catch (e: Exception) {
+                            Toast.makeText(
+                                this@LoginActivity,
+                                "Lỗi khi lấy thông tin user: ${e.message}",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        }
                     }
                 } else {
                     val errorMessage = response.body()?.message ?: "Xác thực Passkey thất bại"

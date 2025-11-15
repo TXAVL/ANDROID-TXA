@@ -77,15 +77,8 @@ class PasskeyManager(private val context: Context) {
                 val challengeBase64 = config.getString("challenge")
                 val challenge = Base64.decode(challengeBase64, Base64.URL_SAFE or Base64.NO_WRAP)
                 
-                // Parse user info
-                val userObj = config.getJSONObject("user")
-                val userIdBase64 = userObj.getString("id")
-                val userId = Base64.decode(userIdBase64, Base64.URL_SAFE or Base64.NO_WRAP)
-                val userName = userObj.getString("name")
-                val userDisplayName = userObj.optString("displayName", userName)
-                val userIcon = userObj.optString("icon") ?: ""
-                
                 // Build requestJson từ config (Credential Manager cần JSON string)
+                // Các thông tin user sẽ được parse trong buildRequestJson
                 val requestJson = buildRequestJson(config, challenge, rpId, rpName, origin)
                 
                 // Create request với requestJson
@@ -126,7 +119,7 @@ class PasskeyManager(private val context: Context) {
                     logPasskey("INFO", "Passkey created successfully")
                     
                     // Gửi response về callback
-                    sendResponseToWebView(callback, true, JSONObject(responseJson as String))
+                    sendResponseToWebView(callback, true, JSONObject(responseJson))
                 } else {
                     throw Exception("Unexpected credential type: ${credential?.javaClass?.name}")
                 }
@@ -232,7 +225,7 @@ class PasskeyManager(private val context: Context) {
                     logPasskey("INFO", "Passkey retrieved successfully")
                     
                     // Gửi response về callback
-                    sendResponseToWebView(callback, true, JSONObject(responseJson as String))
+                    sendResponseToWebView(callback, true, JSONObject(responseJson))
                 } else {
                     throw Exception("Unexpected credential type: ${credential?.javaClass?.name}")
                 }
@@ -279,7 +272,7 @@ class PasskeyManager(private val context: Context) {
         challenge: ByteArray,
         rpId: String,
         rpName: String,
-        origin: String
+        @Suppress("UNUSED_PARAMETER") origin: String
     ): String {
         val requestJson = JSONObject()
         
@@ -333,7 +326,7 @@ class PasskeyManager(private val context: Context) {
         config: JSONObject,
         challenge: ByteArray,
         rpId: String,
-        origin: String
+        @Suppress("UNUSED_PARAMETER") origin: String
     ): String {
         val requestJson = JSONObject()
         
@@ -403,7 +396,11 @@ class PasskeyManager(private val context: Context) {
     /**
      * Gửi response thành công về callback
      */
-    private fun sendResponseToWebView(callback: String, success: Boolean, data: JSONObject) {
+    private fun sendResponseToWebView(
+        @Suppress("UNUSED_PARAMETER") callback: String,
+        success: Boolean,
+        data: JSONObject
+    ) {
         logPasskey("DEBUG", "Response: success=$success, data=${data.toString()}")
         passkeyCallback?.onSuccess(data)
     }
@@ -411,7 +408,11 @@ class PasskeyManager(private val context: Context) {
     /**
      * Gửi error về callback
      */
-    private fun sendErrorToWebView(callback: String, code: String, message: String) {
+    private fun sendErrorToWebView(
+        @Suppress("UNUSED_PARAMETER") callback: String,
+        code: String,
+        message: String
+    ) {
         logPasskey("DEBUG", "Error: code=$code, message=$message")
         passkeyCallback?.onError(code, message)
     }
