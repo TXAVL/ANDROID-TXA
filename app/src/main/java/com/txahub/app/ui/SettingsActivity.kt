@@ -287,10 +287,29 @@ class SettingsActivity : AppCompatActivity() {
         
         lifecycleScope.launch {
             try {
+                // Log full URL trước khi gọi API
+                val logWriter = com.txahub.app.utils.LogWriter(this@SettingsActivity)
+                logWriter.writePasskeyLog("=== Starting Passkey Registration ===", "INFO")
+                val createChallengeUrl = "https://txahub.click/api/passkey-api/create-challenge"
+                logWriter.writePasskeyLog("API URL: $createChallengeUrl", "DEBUG")
+                logWriter.writePasskeyLog("Request Type: registration", "DEBUG")
+                
                 // Gọi API để lấy challenge cho registration
                 val response = ApiClient.passkeyApi.createChallenge(
                     PasskeyModels.CreateChallengeRequest("registration")
                 )
+                
+                // Log response
+                logWriter.writePasskeyLog("API Response - Code: ${response.code()}, Success: ${response.isSuccessful}", "DEBUG")
+                
+                if (!response.isSuccessful) {
+                    val errorBody = try {
+                        response.errorBody()?.string() ?: "No error body"
+                    } catch (e: Exception) {
+                        "Cannot read error body: ${e.message}"
+                    }
+                    logWriter.writePasskeyLog("API Error - Code: ${response.code()}, Body: $errorBody", "ERROR")
+                }
                 
                 if (response.isSuccessful && response.body()?.success == true) {
                     val challengeData = response.body()!!.data!!
@@ -374,12 +393,31 @@ class SettingsActivity : AppCompatActivity() {
                 // Gọi API verify_registration
                 lifecycleScope.launch {
                     try {
+                        // Log full URL trước khi gọi API verify
+                        val logWriter = com.txahub.app.utils.LogWriter(this@SettingsActivity)
+                        val verifyRegUrl = "https://txahub.click/api/passkey-api/verify-registration"
+                        logWriter.writePasskeyLog("=== Verifying Passkey Registration ===", "INFO")
+                        logWriter.writePasskeyLog("API URL: $verifyRegUrl", "DEBUG")
+                        logWriter.writePasskeyLog("Challenge ID: ${currentChallengeId}", "DEBUG")
+                        
                         val verifyResponse = ApiClient.passkeyApi.verifyRegistration(
                             PasskeyModels.VerifyRegistrationRequest(
                                 challengeId = currentChallengeId!!,
                                 credential = responseJson.toString()
                             )
                         )
+                        
+                        // Log response
+                        logWriter.writePasskeyLog("API Response - Code: ${verifyResponse.code()}, Success: ${verifyResponse.isSuccessful}", "DEBUG")
+                        
+                        if (!verifyResponse.isSuccessful) {
+                            val errorBody = try {
+                                verifyResponse.errorBody()?.string() ?: "No error body"
+                            } catch (e: Exception) {
+                                "Cannot read error body: ${e.message}"
+                            }
+                            logWriter.writePasskeyLog("API Error - Code: ${verifyResponse.code()}, Body: $errorBody", "ERROR")
+                        }
                         
                         if (verifyResponse.isSuccessful && verifyResponse.body()?.success == true) {
                             Toast.makeText(

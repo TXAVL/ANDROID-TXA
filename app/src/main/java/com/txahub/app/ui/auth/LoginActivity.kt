@@ -419,6 +419,11 @@ class LoginActivity : AppCompatActivity() {
                 logWriter.writePasskeyLog("=== Starting Passkey Authentication ===", "INFO")
                 logWriter.writePasskeyLog("Requesting challenge for authentication", "DEBUG")
                 
+                // Log full URL trước khi gọi API
+                val createChallengeUrl = "https://txahub.click/api/passkey-api/create-challenge"
+                logWriter.writePasskeyLog("API URL: $createChallengeUrl", "DEBUG")
+                logWriter.writePasskeyLog("Request Type: authentication", "DEBUG")
+                
                 // Gọi API để lấy challenge
                 val response = ApiClient.passkeyApi.createChallenge(
                     PasskeyModels.CreateChallengeRequest("authentication")
@@ -426,6 +431,15 @@ class LoginActivity : AppCompatActivity() {
                 
                 // Log response
                 logWriter.writePasskeyLog("API Response - Code: ${response.code()}, Success: ${response.isSuccessful}", "DEBUG")
+                
+                if (!response.isSuccessful) {
+                    val errorBody = try {
+                        response.errorBody()?.string() ?: "No error body"
+                    } catch (e: Exception) {
+                        "Cannot read error body: ${e.message}"
+                    }
+                    logWriter.writePasskeyLog("API Error - Code: ${response.code()}, Body: $errorBody", "ERROR")
+                }
                 
                 if (response.isSuccessful && response.body()?.success == true) {
                     val challengeData = response.body()!!.data!!
@@ -505,6 +519,13 @@ class LoginActivity : AppCompatActivity() {
                     return@launch
                 }
                 
+                // Log full URL trước khi gọi API verify
+                val logWriter = com.txahub.app.utils.LogWriter(this@LoginActivity)
+                val verifyAuthUrl = "https://txahub.click/api/passkey-api/verify-authentication"
+                logWriter.writePasskeyLog("=== Verifying Passkey Authentication ===", "INFO")
+                logWriter.writePasskeyLog("API URL: $verifyAuthUrl", "DEBUG")
+                logWriter.writePasskeyLog("Challenge ID: $challengeId", "DEBUG")
+                
                 // Gọi API để verify authentication
                 val response = ApiClient.passkeyApi.verifyAuthentication(
                     PasskeyModels.VerifyAuthenticationRequest(
@@ -512,6 +533,18 @@ class LoginActivity : AppCompatActivity() {
                         credential = data.toString()
                     )
                 )
+                
+                // Log response
+                logWriter.writePasskeyLog("API Response - Code: ${response.code()}, Success: ${response.isSuccessful}", "DEBUG")
+                
+                if (!response.isSuccessful) {
+                    val errorBody = try {
+                        response.errorBody()?.string() ?: "No error body"
+                    } catch (e: Exception) {
+                        "Cannot read error body: ${e.message}"
+                    }
+                    logWriter.writePasskeyLog("API Error - Code: ${response.code()}, Body: $errorBody", "ERROR")
+                }
                 
                 binding.progressBar.visibility = android.view.View.GONE
                 binding.btnPasskeyLogin.isEnabled = true
