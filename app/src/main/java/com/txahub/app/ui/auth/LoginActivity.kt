@@ -18,7 +18,7 @@ import com.txahub.app.data.api.ApiClient
 import com.txahub.app.data.models.PasskeyModels
 import com.txahub.app.data.models.AuthResponse
 import com.txahub.app.ui.MainActivity
-import com.txahub.app.ui.ChangelogActivity
+import com.txahub.app.utils.ChangelogActivity
 import com.txahub.app.ui.SettingsActivity
 import com.txahub.app.utils.PasskeyManager
 import kotlinx.coroutines.launch
