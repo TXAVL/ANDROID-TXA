@@ -51,12 +51,12 @@
         <activity
             android:name=".ui.MainActivity"
             android:exported="false"
-            android:theme="@style/Theme.TXAHub" />
+            android:theme="@style/Theme.TXAHub.NoActionBar" />
         
         <activity
             android:name=".ui.admin.AdminManagementActivity"
             android:exported="false"
-            android:theme="@style/Theme.TXAHub"
+            android:theme="@style/Theme.TXAHub.NoActionBar"
             android:parentActivityName=".ui.MainActivity" />
         
         <activity
@@ -67,7 +67,7 @@
         <activity
             android:name=".ui.SettingsActivity"
             android:exported="false"
-            android:theme="@style/Theme.TXAHub"
+            android:theme="@style/Theme.TXAHub.NoActionBar"
             android:parentActivityName=".ui.MainActivity" />
         
         <activity

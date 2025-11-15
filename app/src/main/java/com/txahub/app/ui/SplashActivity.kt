@@ -12,8 +12,9 @@ import com.txahub.app.data.api.ApiClient
 import com.txahub.app.utils.PermissionManager
 import com.txahub.app.utils.PermissionRequestDialog
 import com.txahub.app.utils.UpdateChecker
-import com.txahub.app.utils.ChangelogActivity
+import com.txahub.app.utils.ChangelogDialog
 import com.txahub.app.ui.auth.LoginActivity
+import kotlinx.coroutines.lifecycleScope
 import kotlinx.coroutines.CoroutineScope
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.launch
@@ -237,51 +238,39 @@ class SplashActivity : AppCompatActivity() {
     }
     
     private fun checkChangelogAndProceed() {
-        // Kiểm tra xem đã hiển thị changelog chưa (chỉ hiển thị lần đầu mỗi lần khởi động)
-        val prefs = getSharedPreferences("txahub_prefs", MODE_PRIVATE)
-        val lastShownVersion = prefs.getString("last_changelog_version", "")
+        // Kiểm tra xem đã hiển thị changelog cho phiên bản hiện tại chưa
         val currentVersion = getCurrentVersion()
         
-        if (lastShownVersion != currentVersion && !hasShownChangelog) {
-            // Hiển thị changelog
-            hasShownChangelog = true
-            val updateChecker = UpdateChecker(this)
+        lifecycleScope.launch {
+            val hasViewed = preferencesManager.hasViewedChangelogForVersion(currentVersion)
             
-            // Timeout cho việc check update: nếu quá 3 giây thì bỏ qua
-            val updateCheckTimeout = Handler(Looper.getMainLooper())
-            updateCheckTimeout.postDelayed({
-                android.util.Log.w("SplashActivity", "Update check timeout, proceeding")
-                proceedToNextScreen()
-            }, 3000)
-            
-            updateChecker.checkUpdate { updateInfo ->
-                updateCheckTimeout.removeCallbacksAndMessages(null)
+            if (!hasViewed && !hasShownChangelog) {
+                // Chưa xem changelog cho version này, hiển thị modal dialog
+                hasShownChangelog = true
                 runOnUiThread {
-                    if (updateInfo != null) {
-                        // Có bản cập nhật, hiển thị changelog
-                        val intent = Intent(this, ChangelogActivity::class.java).apply {
-                            putExtra(ChangelogActivity.EXTRA_VERSION_NAME, updateInfo.versionName)
-                            putExtra(ChangelogActivity.EXTRA_CHANGELOG, updateInfo.changelog)
-                        }
-                        startActivity(intent)
-                        
-                        // Lưu version đã hiển thị
-                        prefs.edit().putString("last_changelog_version", currentVersion).apply()
-                        
-                        // Chờ một chút rồi chuyển màn hình
-                        Handler(Looper.getMainLooper()).postDelayed({
-                            proceedToNextScreen()
-                        }, 2000)
-                    } else {
-                        // Không có bản cập nhật, chuyển màn hình luôn
-                        proceedToNextScreen()
-                    }
+                    showChangelogDialog(currentVersion)
                 }
+            } else {
+                // Đã xem changelog hoặc đã hiển thị, chuyển màn hình
+                proceedToNextScreen()
             }
-        } else {
-            // Đã hiển thị changelog hoặc không cần, chuyển màn hình
-            proceedToNextScreen()
         }
+    }
+    
+    /**
+     * Hiển thị dialog changelog cho phiên bản hiện tại
+     */
+    private fun showChangelogDialog(versionName: String) {
+        val dialog = ChangelogDialog(this)
+        dialog.setVersionName(versionName)
+        dialog.setOnDismissListener {
+            // Khi đóng dialog, lưu lại đã xem và chuyển màn hình
+            lifecycleScope.launch {
+                preferencesManager.markChangelogViewedForVersion(versionName)
+                proceedToNextScreen()
+            }
+        }
+        dialog.show()
     }
     
     private fun proceedToNextScreen() {
