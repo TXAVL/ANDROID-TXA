@@ -63,7 +63,9 @@ class NotificationHelper(private val context: Context) {
                     setBypassDnd(true)
                 }
                 // Đặt sound cho notification từ settings
-                val soundUri = soundManager.getNotificationSoundUri()
+                // Ưu tiên dùng MediaStore URI nếu có (để hiển thị đúng tên trong Settings)
+                val soundUri = soundManager.getDefaultAppSoundMediaStoreUri() 
+                    ?: soundManager.getNotificationSoundUri()
                 // Luôn set sound (không bao giờ null vì default sẽ dùng sound hệ thống)
                 setSound(soundUri, null)
                 // Gán vào group nếu grouping được bật
@@ -83,7 +85,9 @@ class NotificationHelper(private val context: Context) {
                 enableLights(false)
                 setShowBadge(false)
                 // Đặt sound cho background channel từ settings
-                val soundUri = soundManager.getNotificationSoundUri()
+                // Ưu tiên dùng MediaStore URI nếu có (để hiển thị đúng tên trong Settings)
+                val soundUri = soundManager.getDefaultAppSoundMediaStoreUri() 
+                    ?: soundManager.getNotificationSoundUri()
                 setSound(soundUri, null)
                 // Gán vào group nếu grouping được bật
                 if (groupingManager.isGroupingEnabled()) {
@@ -256,7 +260,9 @@ class NotificationHelper(private val context: Context) {
     fun updateNotificationChannelSound() {
         if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
             val notificationManager = context.getSystemService(Context.NOTIFICATION_SERVICE) as NotificationManager
-            val soundUri = soundManager.getNotificationSoundUri()
+            // Ưu tiên dùng MediaStore URI nếu có (để hiển thị đúng tên trong Settings)
+            val soundUri = soundManager.getDefaultAppSoundMediaStoreUri() 
+                ?: soundManager.getNotificationSoundUri()
             val soundType = soundManager.getSoundType()
             val soundDisplayName = soundManager.getSoundDisplayName()
             

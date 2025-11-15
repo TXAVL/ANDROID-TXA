@@ -11,55 +11,51 @@ class PermissionRequestDialog(private val activity: Activity) {
     private val permissionManager = PermissionManager(activity)
     private var dialog: AlertDialog? = null
     private var layoutPermissions: android.widget.LinearLayout? = null
+    private var btnClose: android.widget.Button? = null
     private var callback: ((Boolean) -> Unit)? = null
+    
+    // Lưu trữ các view của từng quyền để có thể refresh
+    private val permissionViews = mutableMapOf<String, android.view.View>()
     
     /**
      * Hiển thị dialog yêu cầu quyền
      */
     fun show(callback: (allGranted: Boolean) -> Unit) {
         this.callback = callback
-        val missingPermissions = permissionManager.getMissingPermissions()
-        
-        if (missingPermissions.isEmpty()) {
-            // Tất cả quyền đã được cấp
-            callback(true)
-            return
-        }
         
         // Tạo dialog
         val dialogView = activity.layoutInflater.inflate(R.layout.dialog_permission_request, null)
         dialog = AlertDialog.Builder(activity)
             .setTitle(R.string.txa_global_permissions_required)
             .setView(dialogView)
-            .setCancelable(false)
+            .setCancelable(false) // Không cho phép đóng bằng cách bấm ra ngoài hoặc nút back
             .create()
         
-        // Setup RecyclerView hoặc LinearLayout để hiển thị danh sách quyền
-        // Ở đây tôi sẽ dùng LinearLayout đơn giản
+        // Setup views
         layoutPermissions = dialogView.findViewById<android.widget.LinearLayout>(R.id.layoutPermissions)
-        val btnContinue = dialogView.findViewById<android.widget.Button>(R.id.btnContinue)
+        btnClose = dialogView.findViewById<android.widget.Button>(R.id.btnContinue)
         
-        // Refresh danh sách quyền
-        refreshPermissionList()
+        // Đổi text nút thành "Đóng"
+        btnClose?.text = activity.getString(R.string.txa_global_close)
         
-        // Xử lý nút Continue
-        btnContinue.setOnClickListener {
-            // Kiểm tra lại quyền
-            val stillMissing = permissionManager.getMissingPermissions()
-            if (stillMissing.isEmpty()) {
+        // Xử lý nút Đóng
+        btnClose?.setOnClickListener {
+            // Chỉ cho phép đóng khi tất cả quyền đã được cấp
+            if (permissionManager.areAllPermissionsGranted()) {
                 dialog?.dismiss()
-                callback.invoke(true)
+                callback(true)
             } else {
-                // Vẫn còn quyền chưa cấp, KHÔNG cho phép tiếp tục
+                // Không cho phép đóng, hiển thị thông báo
                 Toast.makeText(
                     activity,
-                    "Vui lòng cấp đầy đủ quyền để sử dụng ứng dụng",
-                    Toast.LENGTH_LONG
+                    "Vui lòng cấp đầy đủ quyền để tiếp tục",
+                    Toast.LENGTH_SHORT
                 ).show()
-                // Refresh lại danh sách để cập nhật trạng thái
-                refreshPermissionList()
             }
         }
+        
+        // Refresh danh sách quyền lần đầu
+        refreshPermissionList()
         
         dialog?.show()
     }
@@ -68,53 +64,55 @@ class PermissionRequestDialog(private val activity: Activity) {
      * Refresh danh sách quyền (gọi khi quay lại từ Settings)
      */
     fun refreshPermissionList() {
-        val missingPermissions = permissionManager.getMissingPermissions()
+        // Lấy TẤT CẢ quyền (kể cả đã cấp)
+        val allPermissions = permissionManager.getAllPermissionInfos()
+        
+        // Xóa các view cũ
         layoutPermissions?.removeAllViews()
+        permissionViews.clear()
         
-        if (missingPermissions.isEmpty()) {
-            // Tất cả quyền đã được cấp
-            dialog?.dismiss()
-            callback?.invoke(true)
-            return
-        }
-        
-        // Tạo danh sách quyền để hiển thị
-        val permissionItems = missingPermissions.map { permission ->
-            PermissionItem(
-                permission = permission,
-                isGranted = false
-            )
-        }
-        
-        // Thêm các item quyền
-        permissionItems.forEach { item ->
-            val itemView = createPermissionItemView(item)
+        // Tạo view cho từng quyền
+        allPermissions.forEach { permissionInfo ->
+            val itemView = createPermissionItemView(permissionInfo)
             layoutPermissions?.addView(itemView)
+            permissionViews[permissionInfo.permission] = itemView
         }
+        
+        // Cập nhật trạng thái nút Đóng
+        updateCloseButtonState()
     }
     
     /**
      * Tạo view cho một item quyền
      */
-    private fun createPermissionItemView(item: PermissionItem): android.view.View {
+    private fun createPermissionItemView(permissionInfo: PermissionInfo): android.view.View {
         val itemView = activity.layoutInflater.inflate(R.layout.item_permission, null)
         val tvPermissionName = itemView.findViewById<android.widget.TextView>(R.id.tvPermissionName)
         val tvPermissionDesc = itemView.findViewById<android.widget.TextView>(R.id.tvPermissionDesc)
         val btnGrant = itemView.findViewById<android.widget.Button>(R.id.btnGrant)
+        val ivCheck = itemView.findViewById<android.widget.ImageView>(R.id.ivCheck)
+        val tvStatus = itemView.findViewById<android.widget.TextView>(R.id.tvStatus)
         
-        tvPermissionName.text = item.permission.name
-        tvPermissionDesc.text = item.permission.description
+        tvPermissionName.text = permissionInfo.name
+        tvPermissionDesc.text = permissionInfo.description
         
-        // Cập nhật trạng thái
-        updatePermissionItemView(itemView, item)
+        // Cập nhật trạng thái ban đầu
+        updatePermissionItemView(itemView, permissionInfo)
         
-        // Xử lý click vào item hoặc nút Grant
-        val clickListener = android.view.View.OnClickListener {
-            requestPermission(item.permission)
+        // Xử lý click vào nút Cấp quyền
+        btnGrant.setOnClickListener {
+            requestPermission(permissionInfo)
         }
         
-        itemView.setOnClickListener(clickListener)
-        btnGrant.setOnClickListener(clickListener)
+        // Xử lý click vào toàn bộ item (chỉ khi chưa cấp)
+        itemView.setOnClickListener {
+            // Chỉ mở settings nếu quyền chưa được cấp
+            val currentPermissionInfo = permissionManager.getAllPermissionInfos()
+                .firstOrNull { it.permission == permissionInfo.permission }
+            if (currentPermissionInfo?.isGranted != true) {
+                requestPermission(permissionInfo)
+            }
+        }
         
         return itemView
     }
@@ -122,24 +120,47 @@ class PermissionRequestDialog(private val activity: Activity) {
     /**
      * Cập nhật view của item quyền
      */
-    private fun updatePermissionItemView(itemView: android.view.View, item: PermissionItem) {
+    private fun updatePermissionItemView(itemView: android.view.View, permissionInfo: PermissionInfo) {
         val ivCheck = itemView.findViewById<android.widget.ImageView>(R.id.ivCheck)
         val btnGrant = itemView.findViewById<android.widget.Button>(R.id.btnGrant)
         val tvStatus = itemView.findViewById<android.widget.TextView>(R.id.tvStatus)
         
-        val isGranted = permissionManager.getAllPermissionInfos()
-            .firstOrNull { it.permission == item.permission.permission }?.isGranted ?: false
+        // Kiểm tra lại trạng thái quyền (để đảm bảo luôn cập nhật đúng)
+        val currentPermissionInfo = permissionManager.getAllPermissionInfos()
+            .firstOrNull { it.permission == permissionInfo.permission }
+        
+        val isGranted = currentPermissionInfo?.isGranted ?: false
         
         if (isGranted) {
+            // Quyền đã cấp: hiện tích xanh, ẩn nút Cấp quyền
             ivCheck.visibility = android.view.View.VISIBLE
+            ivCheck.setImageResource(android.R.drawable.checkbox_on_background)
+            ivCheck.setColorFilter(activity.getColor(android.R.color.holo_green_dark))
             btnGrant.visibility = android.view.View.GONE
             tvStatus?.text = activity.getString(R.string.txa_global_permission_granted)
             tvStatus?.setTextColor(activity.getColor(android.R.color.holo_green_dark))
+            itemView.alpha = 1f
         } else {
+            // Quyền chưa cấp: ẩn tích, hiện nút Cấp quyền
             ivCheck.visibility = android.view.View.GONE
             btnGrant.visibility = android.view.View.VISIBLE
             tvStatus?.text = activity.getString(R.string.txa_global_permission_not_granted)
             tvStatus?.setTextColor(activity.getColor(android.R.color.holo_red_dark))
+            itemView.alpha = 1f
+        }
+    }
+    
+    /**
+     * Cập nhật trạng thái nút Đóng
+     */
+    private fun updateCloseButtonState() {
+        val allGranted = permissionManager.areAllPermissionsGranted()
+        btnClose?.isEnabled = allGranted
+        
+        if (allGranted) {
+            btnClose?.alpha = 1f
+        } else {
+            btnClose?.alpha = 0.5f
         }
     }
     
@@ -151,7 +172,7 @@ class PermissionRequestDialog(private val activity: Activity) {
             // Mở cài đặt
             try {
                 activity.startActivity(permissionInfo.settingsIntent)
-                // Không hiển thị toast nữa, để user tập trung vào cài đặt
+                // Không dismiss dialog, để user quay lại và refresh
             } catch (e: Exception) {
                 Toast.makeText(
                     activity,
@@ -162,9 +183,12 @@ class PermissionRequestDialog(private val activity: Activity) {
         }
     }
     
-    private data class PermissionItem(
-        val permission: PermissionInfo,
-        val isGranted: Boolean
-    )
+    /**
+     * Đóng dialog (nếu đang hiển thị)
+     */
+    fun dismiss() {
+        dialog?.dismiss()
+        dialog = null
+        permissionViews.clear()
+    }
 }
-

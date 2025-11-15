@@ -10,6 +10,7 @@ import com.txahub.app.utils.NotificationHelper
 import com.txahub.app.utils.UpdateCheckService
 import com.txahub.app.utils.LogWriter
 import com.txahub.app.utils.LogSettingsManager
+import com.txahub.app.utils.LanguageKeySync
 import java.lang.Thread.UncaughtExceptionHandler
 import kotlinx.coroutines.runBlocking
 
@@ -133,8 +134,14 @@ class TXAApplication : Application() {
             // Thêm tất cả nhạc chuông vào MediaStore (để xuất hiện trong danh sách hệ thống)
             soundManager.addAllAppSoundsToMediaStore()
             
-            // Đăng ký nhạc chuông đã chọn (random) với hệ thống
-            soundManager.registerSelectedSoundAsNotification()
+            // Đăng ký nhạc chuông đã chọn (random) với hệ thống và lấy MediaStore URI
+            val mediaStoreUri = soundManager.registerSelectedSoundAsNotification()
+            if (mediaStoreUri != null) {
+                android.util.Log.d("TXAApplication", "Registered default sound with MediaStore URI: $mediaStoreUri")
+                // Cập nhật notification channels với MediaStore URI
+                val notificationHelper = NotificationHelper(this)
+                notificationHelper.updateNotificationChannelSound()
+            }
         } catch (e: Exception) {
             logError("TXAApplication", "Error initializing NotificationSoundManager", e, this)
         }
@@ -146,6 +153,13 @@ class TXAApplication : Application() {
             }
         } catch (e: Exception) {
             logError("TXAApplication", "Error starting UpdateCheckService", e, this)
+        }
+        
+        try {
+            // Đồng bộ keys ngôn ngữ: kiểm tra và log các key còn thiếu
+            LanguageKeySync.syncLanguageKeys(this)
+        } catch (e: Exception) {
+            logError("TXAApplication", "Error syncing language keys", e, this)
         }
     }
     

@@ -32,6 +32,10 @@ class SplashActivity : AppCompatActivity() {
         try {
             setContentView(R.layout.activity_splash)
             
+            // Khởi tạo managers trước
+            preferencesManager = PreferencesManager(this)
+            permissionManager = PermissionManager(this)
+            
             // Chạy animation splash screen
             startSplashAnimation()
             
@@ -40,10 +44,7 @@ class SplashActivity : AppCompatActivity() {
                 Toast.makeText(this, "©️POWER BY TXA", Toast.LENGTH_SHORT).show()
             }, 1500) // Hiển thị sau 1.5 giây
             
-            preferencesManager = PreferencesManager(this)
-            permissionManager = PermissionManager(this)
-            
-            // Xử lý deeplink nếu có
+            // Xử lý deeplink nếu có (sau khi đã khởi tạo managers)
             val handledDeepLink = handleDeepLink(intent)
             
             // Nếu đã xử lý deeplink, không cần chạy các bước tiếp theo
@@ -129,79 +130,98 @@ class SplashActivity : AppCompatActivity() {
     }
     
     private fun handleDeepLink(intent: Intent?): Boolean {
-        val data = intent?.data
-        if (data != null && data.scheme == "txahub") {
-            val path = data.host ?: ""
-            when (path) {
-                "update" -> {
-                    // Mở Settings và scroll đến phần update
-                    val settingsIntent = Intent(this, SettingsActivity::class.java).apply {
-                        putExtra("scroll_to", "update")
-                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                    }
-                    startActivity(settingsIntent)
-                    finish()
-                    return true
-                }
-                "settings" -> {
-                    // Mở Settings
-                    val settingsIntent = Intent(this, SettingsActivity::class.java).apply {
-                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                    }
-                    startActivity(settingsIntent)
-                    finish()
-                    return true
-                }
-                "logs" -> {
-                    // Mở LogViewerActivity
-                    val logsIntent = Intent(this, LogViewerActivity::class.java).apply {
-                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                    }
-                    startActivity(logsIntent)
-                    finish()
-                    return true
-                }
-                "changelog" -> {
-                    // Mở ChangelogActivity
-                    val changelogIntent = Intent(this, ChangelogActivity::class.java).apply {
-                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                    }
-                    startActivity(changelogIntent)
-                    finish()
-                    return true
-                }
-                "dashboard" -> {
-                    // Mở MainActivity (Dashboard)
-                    CoroutineScope(Dispatchers.Main).launch {
-                        val token = preferencesManager.getAuthTokenSync()
-                        if (!token.isNullOrEmpty()) {
-                            ApiClient.setAuthToken(token)
-                            val dashboardIntent = Intent(this@SplashActivity, MainActivity::class.java).apply {
-                                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                            }
-                            startActivity(dashboardIntent)
-                            finish()
-                        } else {
-                            // Chưa đăng nhập, chuyển đến LoginActivity
-                            val loginIntent = Intent(this@SplashActivity, LoginActivity::class.java).apply {
-                                flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
-                            }
-                            startActivity(loginIntent)
-                            finish()
+        try {
+            val data = intent?.data
+            if (data != null && data.scheme == "txahub") {
+                val path = data.host ?: ""
+                android.util.Log.d("SplashActivity", "Handling deeplink: $path")
+                
+                when (path) {
+                    "update" -> {
+                        // Mở Settings và scroll đến phần update
+                        val settingsIntent = Intent(this, SettingsActivity::class.java).apply {
+                            putExtra("scroll_to", "update")
+                            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
                         }
+                        startActivity(settingsIntent)
+                        finish()
+                        return true
                     }
-                    return true
+                    "settings" -> {
+                        // Mở Settings
+                        val settingsIntent = Intent(this, SettingsActivity::class.java).apply {
+                            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                        }
+                        startActivity(settingsIntent)
+                        finish()
+                        return true
+                    }
+                    "logs" -> {
+                        // Mở LogViewerActivity
+                        val logsIntent = Intent(this, LogViewerActivity::class.java).apply {
+                            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                        }
+                        startActivity(logsIntent)
+                        finish()
+                        return true
+                    }
+                    "changelog" -> {
+                        // Mở ChangelogActivity
+                        val changelogIntent = Intent(this, ChangelogActivity::class.java).apply {
+                            flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                        }
+                        startActivity(changelogIntent)
+                        finish()
+                        return true
+                    }
+                    "dashboard" -> {
+                        // Mở MainActivity (Dashboard)
+                        // Đảm bảo preferencesManager đã được khởi tạo
+                        if (!::preferencesManager.isInitialized) {
+                            preferencesManager = PreferencesManager(this)
+                        }
+                        
+                        CoroutineScope(Dispatchers.Main).launch {
+                            try {
+                                val token = preferencesManager.getAuthTokenSync()
+                                if (!token.isNullOrEmpty()) {
+                                    ApiClient.setAuthToken(token)
+                                    val dashboardIntent = Intent(this@SplashActivity, MainActivity::class.java).apply {
+                                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                                    }
+                                    startActivity(dashboardIntent)
+                                    finish()
+                                } else {
+                                    // Chưa đăng nhập, chuyển đến LoginActivity
+                                    val loginIntent = Intent(this@SplashActivity, LoginActivity::class.java).apply {
+                                        flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                                    }
+                                    startActivity(loginIntent)
+                                    finish()
+                                }
+                            } catch (e: Exception) {
+                                android.util.Log.e("SplashActivity", "Error handling dashboard deeplink", e)
+                                // Fallback: chuyển đến LoginActivity
+                                val loginIntent = Intent(this@SplashActivity, LoginActivity::class.java).apply {
+                                    flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TOP
+                                }
+                                startActivity(loginIntent)
+                                finish()
+                            }
+                        }
+                        return true
+                    }
                 }
             }
+        } catch (e: Exception) {
+            android.util.Log.e("SplashActivity", "Error handling deeplink", e)
         }
         return false
     }
     
     private fun checkPermissionsAndProceed() {
-        val missingPermissions = permissionManager.getMissingPermissions()
-        
-        if (missingPermissions.isNotEmpty() && !hasShownPermissions) {
-            // Hiển thị dialog yêu cầu quyền
+        // Luôn hiển thị dialog quyền (không check missingPermissions trước)
+        if (!hasShownPermissions) {
             hasShownPermissions = true
             permissionDialog = PermissionRequestDialog(this)
             permissionDialog?.show { allGranted ->
@@ -210,26 +230,9 @@ class SplashActivity : AppCompatActivity() {
                     permissionDialog = null
                     splashTimeoutHandler?.removeCallbacksAndMessages(null)
                     checkChangelogAndProceed()
-                } else {
-                    // Chưa cấp đủ quyền, kiểm tra lại sau khi quay lại từ Settings
-                    // (onResume sẽ gọi refreshPermissionList)
                 }
+                // Nếu chưa cấp đủ quyền, dialog vẫn hiển thị và chờ user cấp
             }
-        } else if (missingPermissions.isEmpty()) {
-            // Đã có đủ quyền, kiểm tra changelog
-            splashTimeoutHandler?.removeCallbacksAndMessages(null)
-            checkChangelogAndProceed()
-        } else {
-            // Đã hiển thị dialog nhưng vẫn còn quyền chưa cấp
-            // Kiểm tra lại sau 2 giây để tránh treo
-            Handler(Looper.getMainLooper()).postDelayed({
-                if (hasShownPermissions) {
-                    // Nếu vẫn còn quyền chưa cấp sau 2 giây, tiếp tục với quyền hiện có
-                    android.util.Log.w("SplashActivity", "Some permissions not granted, proceeding anyway")
-                    splashTimeoutHandler?.removeCallbacksAndMessages(null)
-                    checkChangelogAndProceed()
-                }
-            }, 2000)
         }
     }
     
@@ -319,13 +322,8 @@ class SplashActivity : AppCompatActivity() {
     override fun onResume() {
         super.onResume()
         // Khi quay lại từ cài đặt, refresh dialog nếu đang hiển thị
+        // Điều này sẽ cập nhật trạng thái các quyền và enable nút Đóng nếu tất cả đã cấp
         permissionDialog?.refreshPermissionList()
-        
-        // Kiểm tra lại quyền
-        if (hasShownPermissions) {
-            hasShownPermissions = false // Reset để có thể hiển thị dialog lại nếu vẫn còn quyền chưa cấp
-            checkPermissionsAndProceed()
-        }
     }
 }
 

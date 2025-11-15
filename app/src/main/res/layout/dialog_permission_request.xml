@@ -31,7 +31,9 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:layout_marginTop="16dp"
-        android:text="@string/txa_global.ok" />
+        android:text="@string/txa_global.close"
+        android:enabled="false"
+        android:alpha="0.5" />
 
 </LinearLayout>
 

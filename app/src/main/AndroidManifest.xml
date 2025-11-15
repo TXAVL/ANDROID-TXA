@@ -73,7 +73,7 @@
         <activity
             android:name=".ui.LogViewerActivity"
             android:exported="false"
-            android:theme="@style/Theme.TXAHub"
+            android:theme="@style/Theme.TXAHub.NoActionBar"
             android:parentActivityName=".ui.MainActivity" />
 
         <!-- FileProvider for sharing log files -->

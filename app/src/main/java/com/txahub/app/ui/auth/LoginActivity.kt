@@ -3,9 +3,12 @@ package com.txahub.app.ui.auth
 import android.content.Intent
 import android.os.Bundle
 import android.text.TextUtils
+import android.view.MenuItem
 import android.widget.Toast
+import androidx.appcompat.app.ActionBarDrawerToggle
 import androidx.appcompat.app.AlertDialog
 import androidx.appcompat.app.AppCompatActivity
+import androidx.core.view.GravityCompat
 import androidx.lifecycle.lifecycleScope
 import com.txahub.app.R
 import com.txahub.app.databinding.ActivityLoginBinding
@@ -15,6 +18,8 @@ import com.txahub.app.data.api.ApiClient
 import com.txahub.app.data.models.PasskeyModels
 import com.txahub.app.data.models.AuthResponse
 import com.txahub.app.ui.MainActivity
+import com.txahub.app.ui.ChangelogActivity
+import com.txahub.app.ui.SettingsActivity
 import com.txahub.app.utils.PasskeyManager
 import kotlinx.coroutines.launch
 import org.json.JSONObject
@@ -25,6 +30,7 @@ class LoginActivity : AppCompatActivity() {
     private lateinit var authRepository: AuthRepository
     private lateinit var preferencesManager: PreferencesManager
     private lateinit var passkeyManager: PasskeyManager
+    private lateinit var drawerToggle: ActionBarDrawerToggle
     private var isRegisterMode = false
     private var currentChallengeId: String? = null
     
@@ -57,9 +63,12 @@ class LoginActivity : AppCompatActivity() {
         })
         
         setupUI()
+        setupNavigationDrawer()
     }
     
     private fun setupUI() {
+        setSupportActionBar(binding.toolbar)
+        
         binding.btnToggleMode.setOnClickListener {
             toggleMode()
         }
@@ -87,6 +96,53 @@ class LoginActivity : AppCompatActivity() {
                     Toast.LENGTH_LONG
                 ).show()
             }
+        }
+    }
+    
+    private fun setupNavigationDrawer() {
+        // Setup drawer toggle với menu hamburger
+        drawerToggle = ActionBarDrawerToggle(
+            this,
+            binding.drawerLayout,
+            binding.toolbar,
+            R.string.txa_global_menu_dashboard,
+            R.string.txa_global_menu_dashboard
+        )
+        
+        // Enable hamburger icon
+        drawerToggle.isDrawerIndicatorEnabled = true
+        supportActionBar?.setDisplayHomeAsUpEnabled(true)
+        supportActionBar?.setHomeButtonEnabled(true)
+        
+        binding.drawerLayout.addDrawerListener(drawerToggle)
+        drawerToggle.syncState()
+        
+        // Setup navigation item click listener
+        binding.navigationView.setNavigationItemSelectedListener { menuItem ->
+            handleNavigationItemSelected(menuItem)
+            binding.drawerLayout.closeDrawer(GravityCompat.START)
+            true
+        }
+        
+        // Set dashboard as selected by default
+        binding.navigationView.setCheckedItem(R.id.nav_dashboard)
+    }
+    
+    private fun handleNavigationItemSelected(menuItem: MenuItem): Boolean {
+        return when (menuItem.itemId) {
+            R.id.nav_dashboard -> {
+                // Đã ở màn hình login, không cần làm gì
+                true
+            }
+            R.id.nav_changelog -> {
+                startActivity(Intent(this, ChangelogActivity::class.java))
+                true
+            }
+            R.id.nav_settings -> {
+                startActivity(Intent(this, SettingsActivity::class.java))
+                true
+            }
+            else -> false
         }
     }
     
@@ -507,6 +563,15 @@ class LoginActivity : AppCompatActivity() {
                     Toast.LENGTH_LONG
                 ).show()
             }
+        }
+    }
+    
+    @Deprecated("Deprecated in Java")
+    override fun onBackPressed() {
+        if (binding.drawerLayout.isDrawerOpen(GravityCompat.START)) {
+            binding.drawerLayout.closeDrawer(GravityCompat.START)
+        } else {
+            onBackPressedDispatcher.onBackPressed()
         }
     }
     

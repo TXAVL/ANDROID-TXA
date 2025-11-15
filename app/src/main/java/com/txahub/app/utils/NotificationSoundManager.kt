@@ -665,14 +665,14 @@ class NotificationSoundManager(private val context: Context) {
     
     /**
      * Đăng ký nhạc chuông đã chọn (random) với hệ thống để xuất hiện trong danh sách nhạc chuông thông báo
-     * Sử dụng RingtoneManager để đăng ký
+     * Trả về MediaStore URI của sound đã chọn để dùng cho notification channel
      */
-    fun registerSelectedSoundAsNotification() {
+    fun registerSelectedSoundAsNotification(): Uri? {
         try {
             val defaultSoundUri = getDefaultAppSoundUri()
             if (defaultSoundUri == null) {
                 android.util.Log.w("NotificationSoundManager", "No default app sound to register")
-                return
+                return null
             }
             
             // Lấy file từ URI
@@ -690,29 +690,40 @@ class NotificationSoundManager(private val context: Context) {
             
             if (soundFile == null || !soundFile.exists()) {
                 android.util.Log.w("NotificationSoundManager", "Sound file not found: $soundFile")
-                return
+                return null
             }
             
             // Tìm MediaStore URI tương ứng với file này
             val mediaStoreUri = findMediaStoreUriForFile(soundFile)
             if (mediaStoreUri == null) {
                 android.util.Log.w("NotificationSoundManager", "MediaStore URI not found for file: ${soundFile.name}")
-                return
+                return null
             }
             
-            // Đăng ký với RingtoneManager (chỉ cho notification, không phải ringtone)
-            // Trên Android 10+, việc đăng ký được thực hiện tự động khi thêm vào MediaStore với IS_NOTIFICATION=1
-            // Chúng ta chỉ cần đảm bảo file đã được thêm vào MediaStore (đã làm trong addAllAppSoundsToMediaStore)
-            android.util.Log.d("NotificationSoundManager", "Registered notification sound: $mediaStoreUri")
+            // Lưu MediaStore URI để dùng cho notification channel
+            // Lưu cả MediaStore URI và FileProvider URI
+            prefs.edit().putString("${KEY_DEFAULT_APP_SOUND_URI}_mediastore", mediaStoreUri.toString()).apply()
+            
+            android.util.Log.d("NotificationSoundManager", "Registered notification sound: $mediaStoreUri (file: ${soundFile.name})")
+            return mediaStoreUri
         } catch (e: Exception) {
             android.util.Log.e("NotificationSoundManager", "Error registering selected sound as notification", e)
+            return null
         }
+    }
+    
+    /**
+     * Lấy MediaStore URI của sound mặc định app (nếu đã đăng ký)
+     */
+    fun getDefaultAppSoundMediaStoreUri(): Uri? {
+        val uriString = prefs.getString("${KEY_DEFAULT_APP_SOUND_URI}_mediastore", null)
+        return uriString?.let { Uri.parse(it) }
     }
     
     /**
      * Tìm MediaStore URI cho một file cụ thể
      */
-    private fun findMediaStoreUriForFile(soundFile: java.io.File): Uri? {
+    fun findMediaStoreUriForFile(soundFile: java.io.File): Uri? {
         return try {
             val fileNameWithoutExt = soundFile.nameWithoutExtension
             val displayName = "TXA Hub - $fileNameWithoutExt"
